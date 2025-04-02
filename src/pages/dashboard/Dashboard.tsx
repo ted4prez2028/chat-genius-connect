@@ -8,7 +8,8 @@ import PackageSalesTable from "@/components/dashboard/PackageSalesTable";
 import SalesReportTable from "@/components/dashboard/SalesReportTable";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
+import { Calendar, Video } from "lucide-react";
+import AICallButton from "@/components/videocall/AICallButton";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -17,12 +18,15 @@ const Dashboard = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">DASHBOARD</h1>
-        <Link to="/dashboard/calendar">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Calendar size={16} />
-            View Calendar
-          </Button>
-        </Link>
+        <div className="flex gap-4">
+          <Link to="/dashboard/calendar">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Calendar size={16} />
+              View Calendar
+            </Button>
+          </Link>
+          <AICallButton />
+        </div>
       </div>
 
       {/* Summary Cards */}

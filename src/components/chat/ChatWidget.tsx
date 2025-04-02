@@ -43,7 +43,7 @@ const ChatWidget = () => {
       {isOpen ? (
         <div className="bg-white rounded-lg shadow-xl w-80 sm:w-96 overflow-hidden flex flex-col max-h-[500px] border border-gray-200">
           <div className="bg-brand-pink p-4 text-white flex justify-between items-center">
-            <h3 className="font-semibold">Food Truck Support</h3>
+            <h3 className="font-semibold">Olivia - Food Truck Support</h3>
             <Button variant="ghost" size="icon" onClick={toggleChat} className="text-white hover:bg-pink-700 h-8 w-8">
               <X size={18} />
             </Button>
@@ -54,7 +54,7 @@ const ChatWidget = () => {
               <div className="text-center text-gray-500 py-8">
                 <MessageSquare className="mx-auto h-12 w-12 mb-4 text-gray-400" />
                 <p>Welcome to Food Truck Community support!</p>
-                <p className="text-sm mt-2">How can we help you today?</p>
+                <p className="text-sm mt-2">I'm Olivia, your personal assistant. I can help with bookings, vendor information, dashboard features, and more!</p>
               </div>
             ) : (
               messages.map((msg, index) => (
@@ -68,7 +68,7 @@ const ChatWidget = () => {
                 >
                   <p className="text-sm">{msg.content}</p>
                   <p className="text-xs mt-1 opacity-70 text-right">
-                    {msg.role === "user" ? "You" : "Support"} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {msg.role === "user" ? "You" : "Olivia"} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               ))
