@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import AICallButton from "@/components/videocall/AICallButton";
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,6 +27,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       <Sidebar />
       <main className="flex-1 overflow-y-auto ml-64">
         {children}
+        <div className="fixed bottom-6 left-6 z-40">
+          <AICallButton />
+        </div>
       </main>
     </div>
   );
