@@ -13,7 +13,10 @@ export const generateChatResponse = async (messages: Message[]): Promise<string>
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const lastUserMessage = messages.findLast(m => m.role === "user")?.content.toLowerCase() || "";
+    // Find the last user message using filter and pop instead of findLast
+    const lastUserMessage = messages
+      .filter(m => m.role === "user")
+      .pop()?.content.toLowerCase() || "";
     
     // Simple pattern matching for demo
     if (lastUserMessage.includes("hello") || lastUserMessage.includes("hi")) {

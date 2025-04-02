@@ -266,13 +266,13 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
             {isVideoOff && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || 'User'} />
-                  <AvatarFallback className="text-2xl">{user?.displayName?.[0] || 'U'}</AvatarFallback>
+                  <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
+                  <AvatarFallback className="text-2xl">{user?.name?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
               </div>
             )}
             <div className="absolute bottom-2 left-2 right-2 p-2 bg-black bg-opacity-60 text-white rounded-lg text-sm">
-              {user?.displayName || 'You'}
+              {user?.name || 'You'}
             </div>
           </div>
         </div>

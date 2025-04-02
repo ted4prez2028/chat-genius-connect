@@ -8,6 +8,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import ChatWidget from "@/components/chat/ChatWidget";
+import { DateRange } from "react-day-picker";
 
 // Sample data for charts
 const dailySalesData = [
@@ -38,6 +39,17 @@ const vendorTags = [
 const Dashboard = () => {
   const { user } = useAuth();
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // Custom handler for date selection that can be passed to Calendar component
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    setDate(selectedDate);
+  };
+
+  // Custom handler for date range selection
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+  };
 
   return (
     <div className="p-8">
@@ -117,7 +129,11 @@ const Dashboard = () => {
             <div className="mb-4 text-right">
               <div className="inline-flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md">
                 <span>03/30/2025</span>
-                <Calendar date={date} onSelect={setDate} className="hidden" />
+                <Calendar 
+                  date={date} 
+                  onSelect={handleDateSelect} 
+                  className="hidden" 
+                />
               </div>
             </div>
 
@@ -142,7 +158,11 @@ const Dashboard = () => {
             <CardTitle className="text-2xl">DAILY SALES</CardTitle>
             <div className="inline-flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md">
               <span>03/30/2025</span>
-              <Calendar date={date} onSelect={setDate} className="hidden" />
+              <Calendar 
+                date={date} 
+                onSelect={handleDateSelect} 
+                className="hidden" 
+              />
             </div>
           </CardHeader>
           <CardContent>
@@ -169,12 +189,20 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span>01/01/2025</span>
-                <Calendar date={date} onSelect={setDate} className="hidden" />
+                <Calendar 
+                  date={dateRange?.from} 
+                  onSelect={handleDateSelect} 
+                  className="hidden" 
+                />
               </div>
               <span>→</span>
               <div className="flex items-center space-x-2">
                 <span>04/02/2025</span>
-                <Calendar date={date} onSelect={setDate} className="hidden" />
+                <Calendar 
+                  date={dateRange?.to} 
+                  onSelect={handleDateSelect} 
+                  className="hidden" 
+                />
               </div>
               <Button className="bg-brand-yellow text-brand-brown font-semibold flex items-center space-x-2">
                 <Download size={16} />
@@ -223,12 +251,20 @@ const Dashboard = () => {
               
               <div className="flex items-center space-x-2">
                 <span>01/01/2025</span>
-                <Calendar date={date} onSelect={setDate} className="hidden" />
+                <Calendar 
+                  date={dateRange?.from} 
+                  onSelect={handleDateSelect} 
+                  className="hidden" 
+                />
               </div>
               <span>→</span>
               <div className="flex items-center space-x-2">
                 <span>04/02/2025</span>
-                <Calendar date={date} onSelect={setDate} className="hidden" />
+                <Calendar 
+                  date={dateRange?.to} 
+                  onSelect={handleDateSelect} 
+                  className="hidden" 
+                />
               </div>
               
               <Button className="bg-brand-yellow text-brand-brown font-semibold flex items-center space-x-2">
