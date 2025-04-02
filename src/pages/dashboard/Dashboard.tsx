@@ -39,9 +39,12 @@ const vendorTags = [
 const Dashboard = () => {
   const { user } = useAuth();
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(2025, 0, 1), // January 1, 2025
+    to: new Date(2025, 3, 2)    // April 2, 2025
+  });
 
-  // Custom handler for date selection that can be passed to Calendar component
+  // Custom handler for single date selection
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
   };
@@ -49,6 +52,12 @@ const Dashboard = () => {
   // Custom handler for date range selection
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
+  };
+
+  // Format date for display (simple format for demo)
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return "";
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   };
 
   return (
@@ -128,10 +137,11 @@ const Dashboard = () => {
           <CardContent>
             <div className="mb-4 text-right">
               <div className="inline-flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md">
-                <span>03/30/2025</span>
+                <span>{formatDate(date)}</span>
                 <Calendar 
-                  date={date} 
-                  onSelect={handleDateSelect} 
+                  mode="single"
+                  selected={date}
+                  onSelect={handleDateSelect}
                   className="hidden" 
                 />
               </div>
@@ -157,10 +167,11 @@ const Dashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-2xl">DAILY SALES</CardTitle>
             <div className="inline-flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-md">
-              <span>03/30/2025</span>
+              <span>{formatDate(date)}</span>
               <Calendar 
-                date={date} 
-                onSelect={handleDateSelect} 
+                mode="single"
+                selected={date}
+                onSelect={handleDateSelect}
                 className="hidden" 
               />
             </div>
@@ -188,19 +199,21 @@ const Dashboard = () => {
             <CardTitle className="text-2xl">PACKAGE SALES</CardTitle>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <span>01/01/2025</span>
+                <span>{formatDate(dateRange?.from)}</span>
                 <Calendar 
-                  date={dateRange?.from} 
-                  onSelect={handleDateSelect} 
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateRangeSelect}
                   className="hidden" 
                 />
               </div>
               <span>→</span>
               <div className="flex items-center space-x-2">
-                <span>04/02/2025</span>
+                <span>{formatDate(dateRange?.to)}</span>
                 <Calendar 
-                  date={dateRange?.to} 
-                  onSelect={handleDateSelect} 
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateRangeSelect}
                   className="hidden" 
                 />
               </div>
@@ -250,19 +263,21 @@ const Dashboard = () => {
               </Tabs>
               
               <div className="flex items-center space-x-2">
-                <span>01/01/2025</span>
+                <span>{formatDate(dateRange?.from)}</span>
                 <Calendar 
-                  date={dateRange?.from} 
-                  onSelect={handleDateSelect} 
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateRangeSelect}
                   className="hidden" 
                 />
               </div>
               <span>→</span>
               <div className="flex items-center space-x-2">
-                <span>04/02/2025</span>
+                <span>{formatDate(dateRange?.to)}</span>
                 <Calendar 
-                  date={dateRange?.to} 
-                  onSelect={handleDateSelect} 
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateRangeSelect}
                   className="hidden" 
                 />
               </div>
