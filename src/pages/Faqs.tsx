@@ -1,11 +1,12 @@
 
 import { useState } from "react";
 import { 
-  MessageSquareQuestion, 
+  MessageSquare, 
   ChevronDown, 
   ChevronUp,
   Search,
-  Tag
+  Tag,
+  HelpCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -145,7 +146,7 @@ const FaqsPage = () => {
           
           {filteredFaqs.length === 0 ? (
             <div className="text-center py-10">
-              <MessageSquareQuestion className="mx-auto h-12 w-12 text-gray-400" />
+              <HelpCircle className="mx-auto h-12 w-12 text-gray-400" />
               <p className="mt-2 text-gray-500">No questions found matching your search</p>
               <Button 
                 variant="link" 
