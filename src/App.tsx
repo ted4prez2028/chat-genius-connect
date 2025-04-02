@@ -15,6 +15,9 @@ import ManageBrands from "./pages/dashboard/ManageBrands";
 import Configurations from "./pages/dashboard/Configurations";
 import EventLogs from "./pages/dashboard/EventLogs";
 import UserProfile from "./pages/dashboard/UserProfile";
+import Orders from "./pages/Orders";
+import Payments from "./pages/Payments";
+import Faqs from "./pages/Faqs";
 import NotFound from "./pages/NotFound";
 import MainLayout from "./components/layout/MainLayout";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -36,6 +39,30 @@ const App = () => (
                 element={
                   <MainLayout>
                     <Index />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/orders" 
+                element={
+                  <MainLayout>
+                    <Orders />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/payments" 
+                element={
+                  <MainLayout>
+                    <Payments />
+                  </MainLayout>
+                } 
+              />
+              <Route 
+                path="/faqs" 
+                element={
+                  <MainLayout>
+                    <Faqs />
                   </MainLayout>
                 } 
               />
