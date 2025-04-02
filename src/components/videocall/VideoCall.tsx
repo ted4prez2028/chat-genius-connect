@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,7 +33,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   const dataArrayRef = useRef<Uint8Array | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Enhanced AI assistant phrases with detailed knowledge about the Food Truck platform
   const aiPhrases = [
     "Hi there! I'm Olivia, your Food Truck Community specialist. I can help you discover amazing food trucks for your events or assist you with our dashboard features.",
     "Our platform connects you with over 50 unique food trucks across multiple cuisines. Would you like me to walk you through our booking process?",
@@ -52,7 +50,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
     if (isOpen) {
       initializeMedia();
       
-      // Simulate AI greeting after 1 second with knowledge of current page
       const timer = setTimeout(() => {
         setIsAiLoading(false);
         const greeting = "Hi there! I'm Olivia, your Food Truck Community specialist. I can see you're exploring our brands page! This section helps you manage your food truck branding, logos, and color schemes. How can I assist you today?";
@@ -64,7 +61,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         clearTimeout(timer);
         cleanupMedia();
         
-        // Clean up voice detection
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
@@ -78,7 +74,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
 
   const initializeMedia = async () => {
     try {
-      // Request both audio and video with preferred settings
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
@@ -96,17 +91,18 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch(error => {
+          console.error("Error playing local video:", error);
+          toast.error("Could not play local video");
+        });
       }
       
-      // Set up audio analysis for voice detection
       setupVoiceDetection(stream);
       
-      // Set connected state after a slight delay to simulate connection establishment
       setTimeout(() => {
         setIsConnected(true);
         toast.success("Connected to Olivia, your Food Truck specialist");
         
-        // Trigger AI response to seeing the user
         const response = "Great! I can see and hear you now. Welcome to our virtual assistant service! I'm Olivia, and I'm here to help with anything related to our food truck platform. What can I help you with on the brands page today?";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
@@ -120,7 +116,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
 
   const setupVoiceDetection = (stream: MediaStream) => {
     try {
-      // Create audio context and analyzer
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioContextRef.current = audioContext;
       
@@ -132,11 +127,9 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       const dataArray = new Uint8Array(bufferLength);
       dataArrayRef.current = dataArray;
       
-      // Connect stream to analyzer
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
       
-      // Start voice detection
       detectVoice();
     } catch (err) {
       console.error("Error setting up voice detection:", err);
@@ -148,21 +141,17 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
     
     analyserRef.current.getByteFrequencyData(dataArrayRef.current);
     
-    // Calculate average volume
     const average = dataArrayRef.current.reduce((acc, val) => acc + val, 0) / dataArrayRef.current.length;
     
-    // Set threshold for voice detection (adjust as needed)
     const threshold = 30;
     const newUserSpeaking = average > threshold;
     
     if (newUserSpeaking !== userSpeaking) {
       setUserSpeaking(newUserSpeaking);
       
-      // Only react to user starting to speak
       if (newUserSpeaking && !userVoiceDetected) {
         setUserVoiceDetected(true);
         
-        // AI response to first hearing the user
         if (!isMuted && aiResponses.length < 3) {
           const response = "I can hear you! Feel free to ask me about managing your food truck brands, customizing your vendor profile, or any other feature on our platform.";
           setAiResponses(prev => [...prev, response]);
@@ -171,7 +160,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       }
     }
     
-    // Continue detection loop
     animationFrameRef.current = requestAnimationFrame(detectVoice);
   };
 
@@ -200,7 +188,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       });
       setIsMuted(!isMuted);
       
-      // AI response to being muted/unmuted with more personality and website knowledge
       if (!isMuted) {
         const response = "I see you've muted your microphone. No problem! While we're on pause, I can mention that our brands section lets you customize your vendor profile with logos, color schemes, and marketing materials. Just let me know when you're ready to chat again!";
         setAiResponses(prev => [...prev, response]);
@@ -221,7 +208,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       });
       setIsVideoOff(!isVideoOff);
       
-      // AI response to video being turned off/on with more website knowledge
       if (!isVideoOff) {
         const response = "I see you've turned your camera off. That's fine! Did you know you can upload custom brand assets in the brands section? You can add logos, banners, and even promotional images for your food truck business.";
         setAiResponses(prev => [...prev, response]);
@@ -246,10 +232,9 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1;
-      utterance.pitch = 1.2; // Higher pitch for female voice
+      utterance.pitch = 1.2;
       utterance.volume = 1;
       
-      // Force female voice selection
       const voices = window.speechSynthesis.getVoices();
       const femaleVoices = voices.filter(voice => 
         voice.name.toLowerCase().includes('female') || 
@@ -268,7 +253,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       utterance.onend = () => {
         setIsAiSpeaking(false);
         
-        // Randomly decide if AI should continue speaking with site knowledge
         if (Math.random() > 0.6 && aiResponses.length < 3) {
           setTimeout(() => {
             const randomIndex = Math.floor(Math.random() * aiPhrases.length);
@@ -279,7 +263,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         }
       };
       
-      // Initialize voices if not loaded yet
       if (window.speechSynthesis.getVoices().length === 0) {
         window.speechSynthesis.onvoiceschanged = () => {
           const updatedVoices = window.speechSynthesis.getVoices();
@@ -305,7 +288,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // If the modal is not open, don't render anything
   if (!isOpen) return null;
 
   return (
@@ -338,21 +320,18 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
           <div className="relative rounded-lg overflow-hidden h-64 lg:h-80 bg-gradient-to-b from-pink-50 to-purple-100">
-            {/* Enhanced AI Avatar using Three.js */}
-            <div className="w-full h-full">
-              <AICharacter 
-                isLoading={isAiLoading}
-                isConnected={isConnected}
-                isSpeaking={isAiSpeaking}
-              />
-            </div>
+            <AICharacter 
+              isLoading={isAiLoading}
+              isConnected={isConnected}
+              isSpeaking={isAiSpeaking}
+            />
             <div className="absolute bottom-2 left-2 right-2 p-2 bg-pink-500 bg-opacity-80 text-white rounded-lg text-sm">
               {aiResponses.length > 0 && aiResponses[aiResponses.length - 1]}
             </div>
           </div>
           
           <div className="relative rounded-lg overflow-hidden h-64 lg:h-80 bg-gray-900">
-            {localStream && (
+            {localStream ? (
               <video
                 ref={localVideoRef}
                 className={`w-full h-full object-cover ${isVideoOff ? 'opacity-0' : ''}`}
@@ -360,6 +339,13 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
                 playsInline
                 muted
               />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
+                  <AvatarFallback className="text-2xl">{user?.name?.[0] || 'U'}</AvatarFallback>
+                </Avatar>
+              </div>
             )}
             {isVideoOff && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
