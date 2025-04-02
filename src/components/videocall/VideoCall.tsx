@@ -23,16 +23,22 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   const [aiResponses, setAiResponses] = useState<string[]>([]);
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(true);
+  const [userSpeaking, setUserSpeaking] = useState(false);
+  const [userVoiceDetected, setUserVoiceDetected] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Enhanced AI assistant phrases with detailed knowledge about the Food Truck platform
   const aiPhrases = [
     "Hi there! I'm Olivia, your Food Truck Community specialist. I can help you discover amazing food trucks for your events or assist you with our dashboard features.",
     "Our platform connects you with over 50 unique food trucks across multiple cuisines. Would you like me to walk you through our booking process?",
-    "I see you're in the calendar view! This is perfect for scheduling multiple food truck events. You can drag and drop to reschedule, or click on a day to add a new booking.",
+    "I see you're on the brands page! This is where you can manage your brand identity and customize how your food truck events look to customers.",
     "The dashboard provides real-time analytics on your food truck events. The summary cards at the top show your key metrics at a glance.",
     "Did you know our platform offers instant chat support with food truck vendors? It's perfect for discussing menu customizations or special requirements.",
     "The tags section on your dashboard helps categorize your events by cuisine type, event size, or budget range. It makes filtering and reporting much easier.",
@@ -49,7 +55,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       // Simulate AI greeting after 1 second with knowledge of current page
       const timer = setTimeout(() => {
         setIsAiLoading(false);
-        const greeting = "Hi there! I'm Olivia, your Food Truck Community specialist. I see you're exploring our calendar view! This is perfect for scheduling and managing your food truck events. How can I assist you today?";
+        const greeting = "Hi there! I'm Olivia, your Food Truck Community specialist. I can see you're exploring our brands page! This section helps you manage your food truck branding, logos, and color schemes. How can I assist you today?";
         setAiResponses([greeting]);
         speakText(greeting);
       }, 2000);
@@ -57,15 +63,33 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       return () => {
         clearTimeout(timer);
         cleanupMedia();
+        
+        // Clean up voice detection
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+        }
       };
     }
   }, [isOpen]);
 
   const initializeMedia = async () => {
     try {
+      // Request both audio and video with preferred settings
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user"
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       });
       
       setLocalStream(stream);
@@ -74,16 +98,81 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         localVideoRef.current.srcObject = stream;
       }
       
+      // Set up audio analysis for voice detection
+      setupVoiceDetection(stream);
+      
       // Set connected state after a slight delay to simulate connection establishment
       setTimeout(() => {
         setIsConnected(true);
         toast.success("Connected to Olivia, your Food Truck specialist");
+        
+        // Trigger AI response to seeing the user
+        const response = "Great! I can see and hear you now. Welcome to our virtual assistant service! I'm Olivia, and I'm here to help with anything related to our food truck platform. What can I help you with on the brands page today?";
+        setAiResponses(prev => [...prev, response]);
+        speakText(response);
       }, 1500);
       
     } catch (err) {
       console.error("Error accessing media devices:", err);
-      toast.error("Could not access camera or microphone");
+      toast.error("Could not access camera or microphone. Please check your device permissions.");
     }
+  };
+
+  const setupVoiceDetection = (stream: MediaStream) => {
+    try {
+      // Create audio context and analyzer
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = audioContext;
+      
+      const analyser = audioContext.createAnalyser();
+      analyserRef.current = analyser;
+      analyser.fftSize = 256;
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      dataArrayRef.current = dataArray;
+      
+      // Connect stream to analyzer
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      // Start voice detection
+      detectVoice();
+    } catch (err) {
+      console.error("Error setting up voice detection:", err);
+    }
+  };
+
+  const detectVoice = () => {
+    if (!analyserRef.current || !dataArrayRef.current) return;
+    
+    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+    
+    // Calculate average volume
+    const average = dataArrayRef.current.reduce((acc, val) => acc + val, 0) / dataArrayRef.current.length;
+    
+    // Set threshold for voice detection (adjust as needed)
+    const threshold = 30;
+    const newUserSpeaking = average > threshold;
+    
+    if (newUserSpeaking !== userSpeaking) {
+      setUserSpeaking(newUserSpeaking);
+      
+      // Only react to user starting to speak
+      if (newUserSpeaking && !userVoiceDetected) {
+        setUserVoiceDetected(true);
+        
+        // AI response to first hearing the user
+        if (!isMuted && aiResponses.length < 3) {
+          const response = "I can hear you! Feel free to ask me about managing your food truck brands, customizing your vendor profile, or any other feature on our platform.";
+          setAiResponses(prev => [...prev, response]);
+          speakText(response);
+        }
+      }
+    }
+    
+    // Continue detection loop
+    animationFrameRef.current = requestAnimationFrame(detectVoice);
   };
 
   const cleanupMedia = () => {
@@ -99,6 +188,8 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
     
     setIsConnected(false);
     setRemoteStream(null);
+    setUserVoiceDetected(false);
+    setUserSpeaking(false);
   };
 
   const toggleMute = () => {
@@ -111,11 +202,11 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       // AI response to being muted/unmuted with more personality and website knowledge
       if (!isMuted) {
-        const response = "I see you've muted your microphone. No problem! While we're on pause, I can mention that our calendar view allows you to color-code events by cuisine type. Just let me know when you're ready to chat again!";
+        const response = "I see you've muted your microphone. No problem! While we're on pause, I can mention that our brands section lets you customize your vendor profile with logos, color schemes, and marketing materials. Just let me know when you're ready to chat again!";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       } else {
-        const response = "Great, I can hear you again! Were you interested in learning about how to use the dashboard features or did you have questions about booking a food truck?";
+        const response = "Great, I can hear you again! Were you interested in learning about how to customize your brand profile or did you have questions about other aspects of our platform?";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       }
@@ -132,11 +223,11 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       // AI response to video being turned off/on with more website knowledge
       if (!isVideoOff) {
-        const response = "I see you've turned your camera off. That's fine! Did you know you can filter food trucks by dietary requirements like vegan, gluten-free, or nut-free options in our search?";
+        const response = "I see you've turned your camera off. That's fine! Did you know you can upload custom brand assets in the brands section? You can add logos, banners, and even promotional images for your food truck business.";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       } else {
-        const response = "There you are! Welcome back. The calendar view you're looking at now supports drag-and-drop functionality to easily reschedule your events.";
+        const response = "There you are! Welcome back. In the brands section, you can create multiple brand profiles if you manage different food truck concepts or events.";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       }
@@ -237,6 +328,11 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
                 Speaking...
               </span>
             )}
+            {userSpeaking && !isMuted && (
+              <span className="mr-3 text-xs bg-green-500 text-white py-1 px-2 rounded-full animate-pulse">
+                Hearing you...
+              </span>
+            )}
           </div>
         </div>
         
@@ -274,7 +370,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
               </div>
             )}
             <div className="absolute bottom-2 left-2 right-2 p-2 bg-black bg-opacity-60 text-white rounded-lg text-sm">
-              {user?.name || 'You'}
+              {user?.name || 'You'} {userSpeaking && !isMuted && <span className="text-green-400 animate-pulse">●</span>}
             </div>
           </div>
         </div>
@@ -283,7 +379,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
           <Button
             onClick={toggleMute}
             variant="outline"
-            className={`rounded-full p-3 ${isMuted ? 'bg-red-100' : ''}`}
+            className={`rounded-full p-3 ${isMuted ? 'bg-red-100 text-red-500' : ''}`}
           >
             {isMuted ? <MicOff /> : <Mic />}
           </Button>
@@ -291,7 +387,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
           <Button
             onClick={toggleVideo}
             variant="outline"
-            className={`rounded-full p-3 ${isVideoOff ? 'bg-red-100' : ''}`}
+            className={`rounded-full p-3 ${isVideoOff ? 'bg-red-100 text-red-500' : ''}`}
           >
             {isVideoOff ? <VideoOff /> : <Video />}
           </Button>
