@@ -16,6 +16,7 @@ import ManageBrands from "./pages/dashboard/ManageBrands";
 import Configurations from "./pages/dashboard/Configurations";
 import EventLogs from "./pages/dashboard/EventLogs";
 import UserProfile from "./pages/dashboard/UserProfile";
+import ManageAccounts from "./pages/dashboard/ManageAccounts";
 import Orders from "./pages/Orders";
 import Payments from "./pages/Payments";
 import Faqs from "./pages/Faqs";
@@ -100,6 +101,14 @@ const App = () => (
                 element={
                   <DashboardLayout>
                     <ManageBrands />
+                  </DashboardLayout>
+                } 
+              />
+              <Route 
+                path="/dashboard/accounts" 
+                element={
+                  <DashboardLayout>
+                    <ManageAccounts />
                   </DashboardLayout>
                 } 
               />

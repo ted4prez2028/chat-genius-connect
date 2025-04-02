@@ -91,10 +91,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-        localVideoRef.current.play().catch(error => {
-          console.error("Error playing local video:", error);
-          toast.error("Could not play local video");
-        });
       }
       
       setupVoiceDetection(stream);
@@ -103,7 +99,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         setIsConnected(true);
         toast.success("Connected to Olivia, your Food Truck specialist");
         
-        const response = "Great! I can see and hear you now. Welcome to our virtual assistant service! I'm Olivia, and I'm here to help with anything related to our food truck platform. What can I help you with on the brands page today?";
+        const response = "Great! I can see and hear you now. Welcome to our virtual assistant service! I'm Olivia, and I'm here to help with anything related to our food truck platform. What can I help you with today?";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       }, 1500);
@@ -334,7 +330,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
             {localStream ? (
               <video
                 ref={localVideoRef}
-                className={`w-full h-full object-cover ${isVideoOff ? 'opacity-0' : ''}`}
+                className={`w-full h-full object-cover ${isVideoOff ? 'hidden' : ''}`}
                 autoPlay
                 playsInline
                 muted
