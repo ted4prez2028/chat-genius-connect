@@ -11,6 +11,10 @@ import Login from "./pages/login/Login";
 import Register from "./pages/login/Register";
 import Dashboard from "./pages/dashboard/Dashboard";
 import ChatSupport from "./pages/dashboard/ChatSupport";
+import ManageBrands from "./pages/dashboard/ManageBrands";
+import Configurations from "./pages/dashboard/Configurations";
+import EventLogs from "./pages/dashboard/EventLogs";
+import UserProfile from "./pages/dashboard/UserProfile";
 import NotFound from "./pages/NotFound";
 import MainLayout from "./components/layout/MainLayout";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -52,6 +56,38 @@ const App = () => (
                 element={
                   <DashboardLayout>
                     <ChatSupport />
+                  </DashboardLayout>
+                } 
+              />
+              <Route 
+                path="/dashboard/brands" 
+                element={
+                  <DashboardLayout>
+                    <ManageBrands />
+                  </DashboardLayout>
+                } 
+              />
+              <Route 
+                path="/dashboard/settings" 
+                element={
+                  <DashboardLayout>
+                    <Configurations />
+                  </DashboardLayout>
+                } 
+              />
+              <Route 
+                path="/dashboard/logs" 
+                element={
+                  <DashboardLayout>
+                    <EventLogs />
+                  </DashboardLayout>
+                } 
+              />
+              <Route 
+                path="/dashboard/profile" 
+                element={
+                  <DashboardLayout>
+                    <UserProfile />
                   </DashboardLayout>
                 } 
               />

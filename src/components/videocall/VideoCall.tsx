@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Video, VideoOff, Mic, MicOff, Phone } from "lucide-react";
 import { toast } from "sonner";
 import Peer from "simple-peer";
+import AICharacter from "@/components/threejs/AICharacter";
 
 interface VideoCallProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [aiResponses, setAiResponses] = useState<string[]>([]);
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(true);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -42,10 +44,11 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       // Simulate AI greeting after 1 second
       const timer = setTimeout(() => {
+        setIsAiLoading(false);
         const greeting = aiPhrases[0];
         setAiResponses([greeting]);
         speakText(greeting);
-      }, 1000);
+      }, 2000);
       
       return () => {
         clearTimeout(timer);
@@ -65,40 +68,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-      }
-      
-      // Create AI video stream (would be replaced with actual AI avatar)
-      const aiVideoElement = document.createElement('video');
-      aiVideoElement.src = "/avatars/ai-avatar.mp4";
-      aiVideoElement.loop = true;
-      aiVideoElement.muted = true;
-      aiVideoElement.play().catch(err => console.error("Error playing AI video:", err));
-      
-      // Create a canvas to capture the video as a stream
-      const canvas = document.createElement('canvas');
-      canvas.width = 640;
-      canvas.height = 480;
-      const ctx = canvas.getContext('2d');
-      
-      // Create a MediaStream from the canvas
-      const aiStream = canvas.captureStream(30);
-      
-      // Animation loop to draw the video to the canvas
-      const drawVideo = () => {
-        if (ctx && !aiVideoElement.paused && !aiVideoElement.ended) {
-          ctx.drawImage(aiVideoElement, 0, 0, canvas.width, canvas.height);
-          requestAnimationFrame(drawVideo);
-        }
-      };
-      
-      aiVideoElement.onplay = () => {
-        drawVideo();
-      };
-      
-      setRemoteStream(aiStream);
-      
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = aiStream;
       }
       
       // Set connected state after a slight delay to simulate connection establishment
@@ -240,14 +209,14 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
           <div className="relative rounded-lg overflow-hidden h-64 lg:h-80 bg-gray-900">
-            {remoteStream && (
-              <video
-                ref={remoteVideoRef}
-                className="w-full h-full object-cover"
-                autoPlay
-                playsInline
+            {/* AI Avatar using Three.js */}
+            <div className="w-full h-full">
+              <AICharacter 
+                isLoading={isAiLoading}
+                isConnected={isConnected}
+                isSpeaking={isAiSpeaking}
               />
-            )}
+            </div>
             <div className="absolute bottom-2 left-2 right-2 p-2 bg-black bg-opacity-60 text-white rounded-lg text-sm">
               {aiResponses.length > 0 && aiResponses[aiResponses.length - 1]}
             </div>
