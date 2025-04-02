@@ -11,6 +11,7 @@ import Login from "./pages/login/Login";
 import Register from "./pages/login/Register";
 import Dashboard from "./pages/dashboard/Dashboard";
 import ChatSupport from "./pages/dashboard/ChatSupport";
+import CalendarView from "./pages/dashboard/CalendarView";
 import ManageBrands from "./pages/dashboard/ManageBrands";
 import Configurations from "./pages/dashboard/Configurations";
 import EventLogs from "./pages/dashboard/EventLogs";
@@ -83,6 +84,14 @@ const App = () => (
                 element={
                   <DashboardLayout>
                     <ChatSupport />
+                  </DashboardLayout>
+                } 
+              />
+              <Route 
+                path="/dashboard/calendar" 
+                element={
+                  <DashboardLayout>
+                    <CalendarView />
                   </DashboardLayout>
                 } 
               />

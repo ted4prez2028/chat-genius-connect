@@ -28,14 +28,16 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
 
-  // AI avatar phrases
+  // Enhanced AI assistant phrases with more personality
   const aiPhrases = [
-    "Hello! I'm your Food Truck Community AI assistant. How can I help you today?",
-    "I can help you book a food truck for your event or answer questions about our vendors.",
-    "Would you like information about our most popular food trucks?",
-    "Did you know we have over 50 different food trucks in our network?",
-    "I can help you with scheduling, menu options, or special dietary requirements.",
-    "Is there anything specific about our food truck community you'd like to learn?",
+    "Hi there! I'm Olivia, your Food Truck Community AI assistant. How can I brighten your day with some delicious food truck options?",
+    "I'd be thrilled to help you book the perfect food truck for your event. What kind of cuisine are you craving?",
+    "Did you know our top-rated food truck this month serves amazing fusion tacos? I've heard they're absolutely to die for!",
+    "We have over 50 unique food trucks in our network - everything from gourmet grilled cheese to authentic Ethiopian cuisine!",
+    "I can help with scheduling, special dietary requirements, or finding the perfect menu for your event. Just let me know what you need!",
+    "Between us, the secret to a successful food truck event is variety. Have you considered booking multiple trucks with complementary menus?",
+    "The weather looks perfect this weekend for an outdoor food event. Would you like me to check which trucks are available?",
+    "I'm excited to help make your food truck experience amazing! What can I tell you about our services?"
   ];
 
   useEffect(() => {
@@ -73,7 +75,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       // Set connected state after a slight delay to simulate connection establishment
       setTimeout(() => {
         setIsConnected(true);
-        toast.success("Connected to AI assistant");
+        toast.success("Connected to Olivia, your AI assistant");
       }, 1500);
       
     } catch (err) {
@@ -105,13 +107,13 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       });
       setIsMuted(!isMuted);
       
-      // AI response to being muted/unmuted
+      // AI response to being muted/unmuted with more personality
       if (!isMuted) {
-        const response = "I notice you've muted your microphone. Let me know when you're ready to speak again.";
+        const response = "I see you've muted your microphone. No worries! I'll be right here when you're ready to chat again. Take your time!";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       } else {
-        const response = "I can hear you again. How can I help you?";
+        const response = "Oh, welcome back! I can hear you again. What food truck questions can I help you with?";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       }
@@ -126,13 +128,13 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       });
       setIsVideoOff(!isVideoOff);
       
-      // AI response to video being turned off/on
+      // AI response to video being turned off/on with more personality
       if (!isVideoOff) {
-        const response = "I see you've turned off your camera. That's fine, I can still hear you.";
+        const response = "Camera turned off, but that's totally fine! Sometimes it's nice to just focus on the conversation.";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       } else {
-        const response = "Nice to see you again!";
+        const response = "There you are! It's lovely to see your face again!";
         setAiResponses(prev => [...prev, response]);
         speakText(response);
       }
@@ -142,7 +144,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   const endCall = () => {
     cleanupMedia();
     onClose();
-    toast.info("Call ended");
+    toast.info("Call ended with Olivia");
   };
 
   const speakText = async (text: string) => {
@@ -151,7 +153,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1;
-      utterance.pitch = 1;
+      utterance.pitch = 1.2; // Slightly higher pitch for female voice
       utterance.volume = 1;
       
       // Use a female voice if available
@@ -168,7 +170,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         setIsAiSpeaking(false);
         
         // Randomly decide if AI should continue speaking after a pause
-        if (Math.random() > 0.6 && aiResponses.length < 3) {
+        if (Math.random() > 0.5 && aiResponses.length < 3) {
           setTimeout(() => {
             const randomPhrase = aiPhrases[Math.floor(Math.random() * aiPhrases.length)];
             setAiResponses(prev => [...prev, randomPhrase]);
@@ -187,20 +189,20 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full overflow-hidden">
-        <div className="p-4 bg-brand-pink text-white flex justify-between items-center">
+        <div className="p-4 bg-pink-500 text-white flex justify-between items-center">
           <div className="flex items-center">
-            <Avatar className="mr-2">
-              <AvatarImage src="/avatars/ai-assistant.png" alt="AI Assistant" />
-              <AvatarFallback className="bg-purple-800">AI</AvatarFallback>
+            <Avatar className="mr-2 border-2 border-white">
+              <AvatarImage src="/avatars/ai-assistant.png" alt="Olivia - AI Assistant" />
+              <AvatarFallback className="bg-purple-300 text-pink-700">OL</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold">Food Truck AI Assistant</h3>
+              <h3 className="font-semibold">Olivia - Food Truck AI Assistant</h3>
               <p className="text-xs opacity-80">{isConnected ? "Connected" : "Connecting..."}</p>
             </div>
           </div>
           <div>
             {isAiSpeaking && (
-              <span className="mr-3 text-xs bg-white text-brand-pink py-1 px-2 rounded-full animate-pulse">
+              <span className="mr-3 text-xs bg-white text-pink-500 py-1 px-2 rounded-full animate-pulse">
                 Speaking...
               </span>
             )}
@@ -208,8 +210,8 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
-          <div className="relative rounded-lg overflow-hidden h-64 lg:h-80 bg-gray-900">
-            {/* AI Avatar using Three.js */}
+          <div className="relative rounded-lg overflow-hidden h-64 lg:h-80 bg-gradient-to-b from-pink-50 to-purple-100">
+            {/* Enhanced AI Avatar using Three.js */}
             <div className="w-full h-full">
               <AICharacter 
                 isLoading={isAiLoading}
@@ -217,7 +219,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
                 isSpeaking={isAiSpeaking}
               />
             </div>
-            <div className="absolute bottom-2 left-2 right-2 p-2 bg-black bg-opacity-60 text-white rounded-lg text-sm">
+            <div className="absolute bottom-2 left-2 right-2 p-2 bg-pink-500 bg-opacity-80 text-white rounded-lg text-sm">
               {aiResponses.length > 0 && aiResponses[aiResponses.length - 1]}
             </div>
           </div>

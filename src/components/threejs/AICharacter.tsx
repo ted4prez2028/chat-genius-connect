@@ -10,25 +10,32 @@ const AIAvatar = ({
   isSpeaking = false,
   headMovement = true
 }) => {
-  // This is a simplified avatar using a 3D sphere with eyes
-  // In a real implementation, you would load a proper 3D model with animations
+  // This is a simplified avatar representing a blonde woman character
   const headRef = useRef<THREE.Group>(null);
   const eyesRef = useRef<THREE.Group>(null);
+  const hairRef = useRef<THREE.Group>(null);
   
   // Head bobbing animation
   useFrame((state) => {
-    if (!headRef.current || !eyesRef.current) return;
+    if (!headRef.current || !eyesRef.current || !hairRef.current) return;
     
     if (headMovement) {
       // Gentle idle animation
       headRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.05;
-      headRef.current.rotation.z = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.05;
+      headRef.current.rotation.z = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.03;
+      
+      // Add subtle hair movement
+      hairRef.current.rotation.z = Math.sin(state.clock.getElapsedTime() * 0.7) * 0.02;
+      hairRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 0.6) * 0.01;
     }
     
     if (isSpeaking) {
-      // More active speaking animation
-      headRef.current.rotation.y = Math.sin(state.clock.getElapsedTime() * 5) * 0.1;
-      headRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 3) * 0.05;
+      // More expressive speaking animation
+      headRef.current.rotation.y = Math.sin(state.clock.getElapsedTime() * 4) * 0.08;
+      headRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 3) * 0.04;
+      
+      // Hair follows head movement with slight delay
+      hairRef.current.rotation.y = Math.sin(state.clock.getElapsedTime() * 4 - 0.2) * 0.05;
     }
     
     // Blinking occasionally
@@ -44,6 +51,15 @@ const AIAvatar = ({
     }
   });
 
+  // Blonde hair color
+  const blondeHairColor = new THREE.Color("#FFD700");
+  // Skin tone
+  const skinTone = new THREE.Color("#FFDBAC");
+  // Eye color (blue)
+  const eyeColor = new THREE.Color("#5DA9E9");
+  // Lip color (soft pink)
+  const lipColor = new THREE.Color("#FF9AA2");
+
   return (
     <group>
       {/* Head */}
@@ -51,11 +67,53 @@ const AIAvatar = ({
         <mesh castShadow>
           <sphereGeometry args={[1, 32, 32]} />
           <meshStandardMaterial 
-            color={isConnected ? "#8a2be2" : "#666666"} 
-            roughness={0.7} 
-            metalness={0.3}
+            color={skinTone} 
+            roughness={0.3} 
+            metalness={0.1}
           />
         </mesh>
+        
+        {/* Hair - blonde woman hairstyle */}
+        <group ref={hairRef} position={[0, 0.2, 0]}>
+          {/* Main hair volume */}
+          <mesh position={[0, 0.1, 0]} castShadow>
+            <sphereGeometry args={[1.1, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+            <meshStandardMaterial 
+              color={blondeHairColor} 
+              roughness={0.8} 
+              metalness={0.2}
+            />
+          </mesh>
+          
+          {/* Hair strands on sides */}
+          <mesh position={[-0.9, -0.3, 0]} rotation={[0, 0, Math.PI * 0.1]} castShadow>
+            <cylinderGeometry args={[0.15, 0.3, 1.2, 8]} />
+            <meshStandardMaterial 
+              color={blondeHairColor} 
+              roughness={0.8} 
+              metalness={0.2}
+            />
+          </mesh>
+          
+          <mesh position={[0.9, -0.3, 0]} rotation={[0, 0, -Math.PI * 0.1]} castShadow>
+            <cylinderGeometry args={[0.15, 0.3, 1.2, 8]} />
+            <meshStandardMaterial 
+              color={blondeHairColor} 
+              roughness={0.8} 
+              metalness={0.2}
+            />
+          </mesh>
+          
+          {/* Hair bangs */}
+          <mesh position={[0, 0.65, 0.5]} rotation={[Math.PI * 0.1, 0, 0]} castShadow>
+            <boxGeometry args={[1.6, 0.3, 0.2]} />
+            <meshStandardMaterial 
+              color={blondeHairColor} 
+              roughness={0.8} 
+              metalness={0.2}
+            />
+          </mesh>
+        </group>
         
         {/* Eyes */}
         <group ref={eyesRef} position={[0, 0.2, 0.85]}>
@@ -64,10 +122,16 @@ const AIAvatar = ({
             <sphereGeometry args={[0.12, 32, 32]} />
             <meshStandardMaterial color="white" />
             
-            {/* Pupil */}
+            {/* Blue iris */}
             <mesh position={[0, 0, 0.08]}>
-              <sphereGeometry args={[0.06, 32, 32]} />
-              <meshStandardMaterial color="black" />
+              <sphereGeometry args={[0.08, 32, 32]} />
+              <meshStandardMaterial color={eyeColor} />
+              
+              {/* Pupil */}
+              <mesh position={[0, 0, 0.04]}>
+                <sphereGeometry args={[0.04, 32, 32]} />
+                <meshStandardMaterial color="black" />
+              </mesh>
             </mesh>
           </mesh>
           
@@ -76,18 +140,55 @@ const AIAvatar = ({
             <sphereGeometry args={[0.12, 32, 32]} />
             <meshStandardMaterial color="white" />
             
-            {/* Pupil */}
+            {/* Blue iris */}
             <mesh position={[0, 0, 0.08]}>
-              <sphereGeometry args={[0.06, 32, 32]} />
-              <meshStandardMaterial color="black" />
+              <sphereGeometry args={[0.08, 32, 32]} />
+              <meshStandardMaterial color={eyeColor} />
+              
+              {/* Pupil */}
+              <mesh position={[0, 0, 0.04]}>
+                <sphereGeometry args={[0.04, 32, 32]} />
+                <meshStandardMaterial color="black" />
+              </mesh>
             </mesh>
+          </mesh>
+          
+          {/* Eyebrows */}
+          <mesh position={[-0.3, 0.15, 0.1]} rotation={[0, 0, Math.PI * 0.1]}>
+            <boxGeometry args={[0.2, 0.03, 0.02]} />
+            <meshStandardMaterial color={blondeHairColor} />
+          </mesh>
+          
+          <mesh position={[0.3, 0.15, 0.1]} rotation={[0, 0, -Math.PI * 0.1]}>
+            <boxGeometry args={[0.2, 0.03, 0.02]} />
+            <meshStandardMaterial color={blondeHairColor} />
           </mesh>
         </group>
         
+        {/* Nose */}
+        <mesh position={[0, 0, 0.95]} rotation={[Math.PI * 0.1, 0, 0]}>
+          <coneGeometry args={[0.08, 0.2, 12]} />
+          <meshStandardMaterial color={skinTone} />
+        </mesh>
+        
         {/* Mouth */}
-        <mesh position={[0, -0.3, 0.85]} rotation={[0, 0, isSpeaking ? Math.sin(Date.now() * 0.01) * 0.3 : 0]}>
-          <boxGeometry args={[0.5, isSpeaking ? 0.15 : 0.05, 0.1]} />
-          <meshStandardMaterial color="#333" />
+        <mesh 
+          position={[0, -0.3, 0.85]} 
+          rotation={[0, 0, isSpeaking ? Math.sin(Date.now() * 0.01) * 0.2 : 0]}
+        >
+          <boxGeometry args={[0.4, isSpeaking ? 0.15 : 0.05, 0.1]} />
+          <meshStandardMaterial color={lipColor} />
+        </mesh>
+        
+        {/* Earrings */}
+        <mesh position={[-1.05, 0, 0]} rotation={[0, Math.PI * 0.5, 0]}>
+          <torusGeometry args={[0.08, 0.02, 8, 16]} />
+          <meshStandardMaterial color="#FFD700" metalness={0.8} roughness={0.2} />
+        </mesh>
+        
+        <mesh position={[1.05, 0, 0]} rotation={[0, Math.PI * 0.5, 0]}>
+          <torusGeometry args={[0.08, 0.02, 8, 16]} />
+          <meshStandardMaterial color="#FFD700" metalness={0.8} roughness={0.2} />
         </mesh>
       </group>
       
@@ -95,7 +196,7 @@ const AIAvatar = ({
       {isLoading && (
         <mesh position={[0, -1.5, 0]} rotation={[0, 0, 0]}>
           <ringGeometry args={[0.5, 0.7, 32]} />
-          <meshStandardMaterial color="#8a2be2" />
+          <meshStandardMaterial color="#FF9AA2" />
         </mesh>
       )}
     </group>
