@@ -1,12 +1,21 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { CreditCard, Download, FileText, Plus } from "lucide-react";
+import { CreditCard, Download, FileText, Plus, Trash2, Check } from "lucide-react";
 import { format } from "date-fns";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 interface PaymentMethod {
   id: string;
@@ -36,12 +45,42 @@ interface Invoice {
   vendor: string;
 }
 
+// Form validation schema
+const paymentMethodSchema = z.object({
+  cardNumber: z.string()
+    .min(16, "Card number must be 16 digits")
+    .max(19, "Card number too long")
+    .regex(/^[0-9\s]+$/, "Card number must contain only digits"),
+  cardholderName: z.string().min(2, "Cardholder name is required"),
+  expiryMonth: z.string().min(1, "Month required"),
+  expiryYear: z.string().min(1, "Year required"),
+  cvv: z.string()
+    .min(3, "CVV must be 3-4 digits")
+    .max(4, "CVV must be 3-4 digits")
+    .regex(/^[0-9]+$/, "CVV must contain only digits"),
+  cardType: z.string().min(1, "Card type is required")
+});
+
 const Payments = () => {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  
+  const form = useForm<z.infer<typeof paymentMethodSchema>>({
+    resolver: zodResolver(paymentMethodSchema),
+    defaultValues: {
+      cardNumber: "",
+      cardholderName: "",
+      expiryMonth: "",
+      expiryYear: "",
+      cvv: "",
+      cardType: ""
+    },
+  });
 
   useEffect(() => {
     // Load or create payment data
@@ -157,12 +196,67 @@ const Payments = () => {
     }));
     setPaymentMethods(updatedMethods);
     localStorage.setItem("foodtruck_payment_methods", JSON.stringify(updatedMethods));
+    toast({
+      title: "Default payment method updated",
+      description: "Your default payment method has been updated successfully.",
+    });
   };
 
   const handleRemovePaymentMethod = (id: string) => {
+    const methodToRemove = paymentMethods.find(method => method.id === id);
+    if (methodToRemove?.isDefault && paymentMethods.length > 1) {
+      toast({
+        title: "Cannot remove default payment method",
+        description: "Please set another payment method as default first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const updatedMethods = paymentMethods.filter(method => method.id !== id);
+    
+    // If we're removing the last card, no need to check for default
+    if (updatedMethods.length > 0) {
+      // If we removed the default card, set the first remaining card as default
+      if (methodToRemove?.isDefault) {
+        updatedMethods[0].isDefault = true;
+      }
+    }
+    
     setPaymentMethods(updatedMethods);
     localStorage.setItem("foodtruck_payment_methods", JSON.stringify(updatedMethods));
+    toast({
+      title: "Payment method removed",
+      description: "Your payment method has been removed successfully.",
+    });
+  };
+
+  const onSubmit = (data: z.infer<typeof paymentMethodSchema>) => {
+    // Extract last 4 digits from card number
+    const last4 = data.cardNumber.replace(/\s/g, '').slice(-4);
+    
+    // Create new payment method
+    const newPaymentMethod: PaymentMethod = {
+      id: `pm_${Date.now()}`,
+      type: data.cardType as "visa" | "mastercard" | "amex" | "discover",
+      last4,
+      expiryMonth: data.expiryMonth,
+      expiryYear: data.expiryYear,
+      isDefault: paymentMethods.length === 0 // Make default if it's the first card
+    };
+    
+    const updatedMethods = [...paymentMethods, newPaymentMethod];
+    setPaymentMethods(updatedMethods);
+    localStorage.setItem("foodtruck_payment_methods", JSON.stringify(updatedMethods));
+    
+    // Reset form and close dialog
+    form.reset();
+    setDialogOpen(false);
+    
+    toast({
+      title: "Payment method added",
+      description: "Your new payment method has been added successfully.",
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -212,6 +306,15 @@ const Payments = () => {
           <CreditCard className="h-6 w-6" />
         );
     }
+  };
+  
+  // Helper to format card numbers with spaces
+  const formatCardNumber = (value: string) => {
+    return value
+      .replace(/\s/g, '')
+      .match(/.{1,4}/g)
+      ?.join(' ')
+      .substring(0, 19) || '';
   };
 
   return (
@@ -272,7 +375,8 @@ const Payments = () => {
                             </p>
                           </div>
                           {method.isDefault && (
-                            <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
+                            <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                              <Check className="h-3 w-3" />
                               Default
                             </span>
                           )}
@@ -288,11 +392,12 @@ const Payments = () => {
                             </Button>
                           )}
                           <Button 
-                            variant="destructive" 
+                            variant="outline" 
                             size="sm"
                             onClick={() => handleRemovePaymentMethod(method.id)}
+                            className="text-red-500 border-red-200 hover:bg-red-50"
                           >
-                            Remove
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -300,9 +405,183 @@ const Payments = () => {
                   </div>
                 )}
                 
-                <Button className="mt-6 bg-brand-pink hover:bg-pink-700">
-                  <Plus className="h-4 w-4 mr-2" /> Add New Payment Method
-                </Button>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="mt-6 bg-brand-pink hover:bg-pink-700">
+                      <Plus className="h-4 w-4 mr-2" /> Add New Payment Method
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add Payment Method</DialogTitle>
+                      <DialogDescription>
+                        Add a new credit or debit card to your account for faster checkout.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                        <FormField
+                          control={form.control}
+                          name="cardholderName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cardholder Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="John Doe" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="cardNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Card Number</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="4242 4242 4242 4242" 
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    const formatted = formatCardNumber(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                  maxLength={19} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="expiryMonth"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Month</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="MM" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Array.from({ length: 12 }, (_, i) => {
+                                      const month = (i + 1).toString().padStart(2, '0');
+                                      return (
+                                        <SelectItem key={month} value={month}>
+                                          {month}
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="expiryYear"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Year</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="YY" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Array.from({ length: 10 }, (_, i) => {
+                                      const year = (new Date().getFullYear() + i).toString().slice(2);
+                                      return (
+                                        <SelectItem key={year} value={year}>
+                                          {year}
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="cvv"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CVV</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="123" 
+                                    {...field} 
+                                    maxLength={4} 
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/\D/g, '');
+                                      field.onChange(value);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="cardType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Card Type</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select card type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="visa">Visa</SelectItem>
+                                  <SelectItem value="mastercard">Mastercard</SelectItem>
+                                  <SelectItem value="amex">American Express</SelectItem>
+                                  <SelectItem value="discover">Discover</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <DialogFooter className="mt-6">
+                          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" className="bg-brand-pink hover:bg-pink-700">
+                            Add Card
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </div>
@@ -310,9 +589,14 @@ const Payments = () => {
         
         <TabsContent value="transactions" className="mt-0">
           <Card>
-            <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>Your recent payments and refunds</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>Your recent payments and refunds</CardDescription>
+              </div>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" /> Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {transactions.length === 0 ? (
@@ -349,15 +633,29 @@ const Payments = () => {
                   </div>
                 </div>
               )}
+              
+              <div className="flex justify-center mt-6">
+                <div className="bg-blue-50 text-blue-700 p-4 rounded-md flex items-start text-sm max-w-2xl">
+                  <div className="mr-2 mt-0.5">ℹ️</div>
+                  <div>
+                    <p>Transactions are automatically created when you make a food truck booking or when a refund is processed.</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
         
         <TabsContent value="invoices" className="mt-0">
           <Card>
-            <CardHeader>
-              <CardTitle>Invoices</CardTitle>
-              <CardDescription>Your billing invoices and payment receipts</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Invoices</CardTitle>
+                <CardDescription>Your billing invoices and payment receipts</CardDescription>
+              </div>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" /> Export All
+              </Button>
             </CardHeader>
             <CardContent>
               {invoices.length === 0 ? (
@@ -403,6 +701,16 @@ const Payments = () => {
                   </div>
                 </div>
               )}
+              
+              <div className="flex justify-center mt-6">
+                <div className="bg-blue-50 text-blue-700 p-4 rounded-md flex items-start text-sm max-w-2xl">
+                  <div className="mr-2 mt-0.5">ℹ️</div>
+                  <div>
+                    <p>Invoices are automatically generated when a payment is processed. 
+                       You can download individual invoices or export all as a ZIP file.</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
