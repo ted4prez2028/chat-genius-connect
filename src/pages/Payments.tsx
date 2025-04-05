@@ -10,40 +10,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { CreditCard, Download, FileText, Plus, Trash2, Check } from "lucide-react";
+import { CreditCard, Download, FileText, Plus, Trash2, Check, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
-interface PaymentMethod {
-  id: string;
-  type: "visa" | "mastercard" | "amex" | "discover";
-  last4: string;
-  expiryMonth: string;
-  expiryYear: string;
-  isDefault: boolean;
-}
-
-interface Transaction {
-  id: string;
-  date: string;
-  amount: number;
-  description: string;
-  status: "completed" | "pending" | "refunded";
-  orderRef: string;
-}
-
-interface Invoice {
-  id: string;
-  orderRef: string;
-  date: string;
-  dueDate: string;
-  amount: number;
-  status: "paid" | "pending" | "overdue";
-  vendor: string;
-}
+import { 
+  PaymentMethod, 
+  Transaction, 
+  Invoice, 
+  getPaymentMethods, 
+  addPaymentMethod, 
+  setDefaultPaymentMethod, 
+  deletePaymentMethod,
+  getTransactions,
+  getInvoices
+} from "@/services/accountsService";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Form validation schema
 const paymentMethodSchema = z.object({
@@ -69,6 +53,11 @@ const Payments = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState({
+    paymentMethods: true,
+    transactions: true,
+    invoices: true
+  });
   
   const form = useForm<z.infer<typeof paymentMethodSchema>>({
     resolver: zodResolver(paymentMethodSchema),
@@ -82,127 +71,60 @@ const Payments = () => {
     },
   });
 
+  // Load real data from services
   useEffect(() => {
-    // Load or create payment data
-    const savedPaymentMethods = localStorage.getItem("foodtruck_payment_methods");
-    const savedTransactions = localStorage.getItem("foodtruck_transactions");
-    const savedInvoices = localStorage.getItem("foodtruck_invoices");
+    const loadData = async () => {
+      try {
+        // Load payment methods
+        setIsLoading(prev => ({ ...prev, paymentMethods: true }));
+        const methods = await getPaymentMethods(user?.id);
+        setPaymentMethods(methods);
+        setIsLoading(prev => ({ ...prev, paymentMethods: false }));
+        
+        // Load transactions
+        setIsLoading(prev => ({ ...prev, transactions: true }));
+        const txns = await getTransactions(user?.id);
+        setTransactions(txns);
+        setIsLoading(prev => ({ ...prev, transactions: false }));
+        
+        // Load invoices
+        setIsLoading(prev => ({ ...prev, invoices: true }));
+        const invs = await getInvoices(user?.id);
+        setInvoices(invs);
+        setIsLoading(prev => ({ ...prev, invoices: false }));
+      } catch (error) {
+        console.error("Error loading payment data:", error);
+        toast({
+          title: "Error loading data",
+          description: "There was a problem loading your payment information.",
+          variant: "destructive"
+        });
+        setIsLoading({
+          paymentMethods: false,
+          transactions: false,
+          invoices: false
+        });
+      }
+    };
     
-    // Process payment methods
-    if (savedPaymentMethods) {
-      setPaymentMethods(JSON.parse(savedPaymentMethods));
-    } else {
-      // Create sample data
-      const samplePaymentMethods: PaymentMethod[] = [
-        {
-          id: "pm_1",
-          type: "visa",
-          last4: "4242",
-          expiryMonth: "12",
-          expiryYear: "2025",
-          isDefault: true
-        },
-        {
-          id: "pm_2",
-          type: "mastercard",
-          last4: "8888",
-          expiryMonth: "09",
-          expiryYear: "2024",
-          isDefault: false
-        }
-      ];
-      setPaymentMethods(samplePaymentMethods);
-      localStorage.setItem("foodtruck_payment_methods", JSON.stringify(samplePaymentMethods));
-    }
-    
-    // Process transactions
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions));
-    } else {
-      // Create sample transactions
-      const sampleTransactions: Transaction[] = [
-        {
-          id: "txn_1",
-          date: format(new Date(2025, 5, 1), "MMM d, yyyy"),
-          amount: 900,
-          description: "Urban Taco - Event Booking",
-          status: "completed",
-          orderRef: "FT123456"
-        },
-        {
-          id: "txn_2",
-          date: format(new Date(2025, 6, 1), "MMM d, yyyy"),
-          amount: 750,
-          description: "Sushi Roll - Event Booking",
-          status: "pending",
-          orderRef: "FT789012"
-        },
-        {
-          id: "txn_3",
-          date: format(new Date(2025, 4, 1), "MMM d, yyyy"),
-          amount: 1500,
-          description: "Smokin' BBQ - Event Booking",
-          status: "completed",
-          orderRef: "FT345678"
-        }
-      ];
-      setTransactions(sampleTransactions);
-      localStorage.setItem("foodtruck_transactions", JSON.stringify(sampleTransactions));
-    }
-    
-    // Process invoices
-    if (savedInvoices) {
-      setInvoices(JSON.parse(savedInvoices));
-    } else {
-      // Create sample invoices
-      const sampleInvoices: Invoice[] = [
-        {
-          id: "inv_1",
-          orderRef: "FT123456",
-          date: format(new Date(2025, 5, 1), "MMM d, yyyy"),
-          dueDate: format(new Date(2025, 5, 15), "MMM d, yyyy"),
-          amount: 900,
-          status: "paid",
-          vendor: "Urban Taco"
-        },
-        {
-          id: "inv_2",
-          orderRef: "FT789012",
-          date: format(new Date(2025, 6, 1), "MMM d, yyyy"),
-          dueDate: format(new Date(2025, 6, 15), "MMM d, yyyy"),
-          amount: 750,
-          status: "pending",
-          vendor: "Sushi Roll"
-        },
-        {
-          id: "inv_3",
-          orderRef: "FT345678",
-          date: format(new Date(2025, 4, 1), "MMM d, yyyy"),
-          dueDate: format(new Date(2025, 4, 15), "MMM d, yyyy"),
-          amount: 1500,
-          status: "paid",
-          vendor: "Smokin' BBQ"
-        }
-      ];
-      setInvoices(sampleInvoices);
-      localStorage.setItem("foodtruck_invoices", JSON.stringify(sampleInvoices));
-    }
-  }, []);
+    loadData();
+  }, [user?.id, toast]);
 
-  const handleSetDefaultPaymentMethod = (id: string) => {
-    const updatedMethods = paymentMethods.map(method => ({
-      ...method,
-      isDefault: method.id === id
-    }));
-    setPaymentMethods(updatedMethods);
-    localStorage.setItem("foodtruck_payment_methods", JSON.stringify(updatedMethods));
-    toast({
-      title: "Default payment method updated",
-      description: "Your default payment method has been updated successfully.",
-    });
+  const handleSetDefaultPaymentMethod = async (id: string) => {
+    try {
+      const updatedMethods = await setDefaultPaymentMethod(id, user?.id);
+      setPaymentMethods(updatedMethods);
+    } catch (error) {
+      console.error("Error setting default payment method:", error);
+      toast({
+        title: "Error",
+        description: "Could not update default payment method.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRemovePaymentMethod = (id: string) => {
+  const handleRemovePaymentMethod = async (id: string) => {
     const methodToRemove = paymentMethods.find(method => method.id === id);
     if (methodToRemove?.isDefault && paymentMethods.length > 1) {
       toast({
@@ -213,50 +135,52 @@ const Payments = () => {
       return;
     }
     
-    const updatedMethods = paymentMethods.filter(method => method.id !== id);
-    
-    // If we're removing the last card, no need to check for default
-    if (updatedMethods.length > 0) {
-      // If we removed the default card, set the first remaining card as default
-      if (methodToRemove?.isDefault) {
-        updatedMethods[0].isDefault = true;
-      }
+    try {
+      await deletePaymentMethod(id, user?.id);
+      // Refresh payment methods
+      const methods = await getPaymentMethods(user?.id);
+      setPaymentMethods(methods);
+    } catch (error) {
+      console.error("Error removing payment method:", error);
+      toast({
+        title: "Error",
+        description: "Could not remove payment method.",
+        variant: "destructive"
+      });
     }
-    
-    setPaymentMethods(updatedMethods);
-    localStorage.setItem("foodtruck_payment_methods", JSON.stringify(updatedMethods));
-    toast({
-      title: "Payment method removed",
-      description: "Your payment method has been removed successfully.",
-    });
   };
 
-  const onSubmit = (data: z.infer<typeof paymentMethodSchema>) => {
-    // Extract last 4 digits from card number
-    const last4 = data.cardNumber.replace(/\s/g, '').slice(-4);
-    
-    // Create new payment method
-    const newPaymentMethod: PaymentMethod = {
-      id: `pm_${Date.now()}`,
-      type: data.cardType as "visa" | "mastercard" | "amex" | "discover",
-      last4,
-      expiryMonth: data.expiryMonth,
-      expiryYear: data.expiryYear,
-      isDefault: paymentMethods.length === 0 // Make default if it's the first card
-    };
-    
-    const updatedMethods = [...paymentMethods, newPaymentMethod];
-    setPaymentMethods(updatedMethods);
-    localStorage.setItem("foodtruck_payment_methods", JSON.stringify(updatedMethods));
-    
-    // Reset form and close dialog
-    form.reset();
-    setDialogOpen(false);
-    
-    toast({
-      title: "Payment method added",
-      description: "Your new payment method has been added successfully.",
-    });
+  const onSubmit = async (data: z.infer<typeof paymentMethodSchema>) => {
+    try {
+      // Extract last 4 digits from card number
+      const last4 = data.cardNumber.replace(/\s/g, '').slice(-4);
+      
+      // Create new payment method
+      const newPaymentMethod: Omit<PaymentMethod, 'id'> = {
+        type: data.cardType as "visa" | "mastercard" | "amex" | "discover",
+        last4,
+        expiryMonth: data.expiryMonth,
+        expiryYear: data.expiryYear,
+        isDefault: paymentMethods.length === 0 // Make default if it's the first card
+      };
+      
+      await addPaymentMethod(newPaymentMethod, user?.id);
+      
+      // Refresh payment methods
+      const methods = await getPaymentMethods(user?.id);
+      setPaymentMethods(methods);
+      
+      // Reset form and close dialog
+      form.reset();
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Error adding payment method:", error);
+      toast({
+        title: "Error",
+        description: "Could not add payment method.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -354,7 +278,11 @@ const Payments = () => {
                 <CardDescription>Manage your saved payment methods for faster checkout</CardDescription>
               </CardHeader>
               <CardContent>
-                {paymentMethods.length === 0 ? (
+                {isLoading.paymentMethods ? (
+                  <div className="flex justify-center items-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                ) : paymentMethods.length === 0 ? (
                   <div className="text-center py-8">
                     <CreditCard className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                     <h3 className="text-lg font-medium mb-2">No payment methods</h3>
@@ -599,39 +527,46 @@ const Payments = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              {transactions.length === 0 ? (
+              {isLoading.transactions ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : transactions.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-medium mb-2">No transactions</h3>
                   <p className="text-gray-500">You don't have any transaction history yet.</p>
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <div className="grid grid-cols-5 bg-slate-50 p-4 font-medium text-sm">
-                    <div>Date</div>
-                    <div className="col-span-2">Description</div>
-                    <div>Status</div>
-                    <div className="text-right">Amount</div>
-                  </div>
-                  
-                  <div className="divide-y">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {transactions.map((transaction) => (
-                      <div key={transaction.id} className="grid grid-cols-5 p-4 text-sm items-center">
-                        <div>{transaction.date}</div>
-                        <div className="col-span-2">
+                      <TableRow key={transaction.id}>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell>
                           <p>{transaction.description}</p>
                           <p className="text-xs text-gray-500">Order #{transaction.orderRef}</p>
-                        </div>
-                        <div>
+                        </TableCell>
+                        <TableCell>
                           <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
                             {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
                           </span>
-                        </div>
-                        <div className="text-right font-medium">${transaction.amount.toFixed(2)}</div>
-                      </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ${transaction.amount.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </div>
-                </div>
+                  </TableBody>
+                </Table>
               )}
               
               <div className="flex justify-center mt-6">
@@ -658,48 +593,53 @@ const Payments = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              {invoices.length === 0 ? (
+              {isLoading.invoices ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : invoices.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-medium mb-2">No invoices</h3>
                   <p className="text-gray-500">You don't have any invoices yet.</p>
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <div className="grid grid-cols-6 bg-slate-50 p-4 font-medium text-sm">
-                    <div>Invoice #</div>
-                    <div>Date</div>
-                    <div>Due Date</div>
-                    <div>Vendor</div>
-                    <div>Status</div>
-                    <div className="text-right">Amount</div>
-                  </div>
-                  
-                  <div className="divide-y">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {invoices.map((invoice) => (
-                      <div key={invoice.id} className="grid grid-cols-6 p-4 text-sm items-center">
-                        <div>
+                      <TableRow key={invoice.id}>
+                        <TableCell>
                           <p>{invoice.id}</p>
                           <p className="text-xs text-gray-500">Order #{invoice.orderRef}</p>
-                        </div>
-                        <div>{invoice.date}</div>
-                        <div>{invoice.dueDate}</div>
-                        <div>{invoice.vendor}</div>
-                        <div>
+                        </TableCell>
+                        <TableCell>{invoice.date}</TableCell>
+                        <TableCell>{invoice.dueDate}</TableCell>
+                        <TableCell>{invoice.vendor}</TableCell>
+                        <TableCell>
                           <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
                             {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                           </span>
-                        </div>
-                        <div className="text-right font-medium">
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
                           ${invoice.amount.toFixed(2)}
                           <Button variant="ghost" size="sm" className="ml-2">
                             <Download className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </div>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </div>
-                </div>
+                  </TableBody>
+                </Table>
               )}
               
               <div className="flex justify-center mt-6">

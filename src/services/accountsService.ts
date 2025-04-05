@@ -155,3 +155,167 @@ export const suspendAccount = async (id: string): Promise<Account> => {
 export const activateAccount = async (id: string): Promise<Account> => {
   return updateAccount(id, { status: "active" });
 };
+
+// Payment Methods Types
+export interface PaymentMethod {
+  id: string;
+  type: "visa" | "mastercard" | "amex" | "discover";
+  last4: string;
+  expiryMonth: string;
+  expiryYear: string;
+  isDefault: boolean;
+  userId?: string;
+}
+
+// Transaction Types
+export interface Transaction {
+  id: string;
+  date: string;
+  amount: number;
+  description: string;
+  status: "completed" | "pending" | "refunded";
+  orderRef: string;
+  userId?: string;
+}
+
+// Invoice Types
+export interface Invoice {
+  id: string;
+  orderRef: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  status: "paid" | "pending" | "overdue";
+  vendor: string;
+  userId?: string;
+}
+
+// Store payment data (simulating a database)
+let paymentMethods: PaymentMethod[] = [];
+let transactions: Transaction[] = [];
+let invoices: Invoice[] = [];
+
+// Payment Methods Functions
+export const getPaymentMethods = async (userId?: string): Promise<PaymentMethod[]> => {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  if (userId) {
+    return paymentMethods.filter(method => method.userId === userId);
+  }
+  return paymentMethods;
+};
+
+export const addPaymentMethod = async (method: Omit<PaymentMethod, 'id'>, userId?: string): Promise<PaymentMethod> => {
+  await new Promise(resolve => setTimeout(resolve, 600));
+  const newMethod: PaymentMethod = {
+    ...method,
+    id: `pm_${Date.now()}`,
+    userId
+  };
+  
+  // If this is the first payment method for this user, make it default
+  if (!paymentMethods.some(m => m.userId === userId)) {
+    newMethod.isDefault = true;
+  }
+  
+  paymentMethods.push(newMethod);
+  toast.success("Payment method added successfully");
+  return newMethod;
+};
+
+export const updatePaymentMethod = async (id: string, data: Partial<PaymentMethod>): Promise<PaymentMethod> => {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  const index = paymentMethods.findIndex(method => method.id === id);
+  if (index === -1) {
+    throw new Error("Payment method not found");
+  }
+  
+  paymentMethods[index] = {
+    ...paymentMethods[index],
+    ...data
+  };
+  
+  return paymentMethods[index];
+};
+
+export const setDefaultPaymentMethod = async (id: string, userId?: string): Promise<PaymentMethod[]> => {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  const userMethods = userId 
+    ? paymentMethods.filter(m => m.userId === userId) 
+    : paymentMethods;
+  
+  const updatedMethods = paymentMethods.map(method => ({
+    ...method,
+    isDefault: method.id === id && (!userId || method.userId === userId)
+  }));
+  
+  paymentMethods = updatedMethods;
+  toast.success("Default payment method updated");
+  
+  return userMethods;
+};
+
+export const deletePaymentMethod = async (id: string, userId?: string): Promise<void> => {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const methodToRemove = paymentMethods.find(method => method.id === id);
+  if (!methodToRemove) {
+    throw new Error("Payment method not found");
+  }
+  
+  // If removing the default method, set another as default
+  if (methodToRemove.isDefault) {
+    const userMethods = userId 
+      ? paymentMethods.filter(m => m.userId === userId && m.id !== id)
+      : paymentMethods.filter(m => m.id !== id);
+      
+    if (userMethods.length > 0) {
+      userMethods[0].isDefault = true;
+    }
+  }
+  
+  paymentMethods = paymentMethods.filter(method => method.id !== id);
+  toast.success("Payment method removed successfully");
+};
+
+// Transaction Functions
+export const getTransactions = async (userId?: string): Promise<Transaction[]> => {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  if (userId) {
+    return transactions.filter(transaction => transaction.userId === userId);
+  }
+  return transactions;
+};
+
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>, userId?: string): Promise<Transaction> => {
+  await new Promise(resolve => setTimeout(resolve, 600));
+  const newTransaction: Transaction = {
+    ...transaction,
+    id: `txn_${Date.now()}`,
+    userId
+  };
+  
+  transactions.push(newTransaction);
+  return newTransaction;
+};
+
+// Invoice Functions
+export const getInvoices = async (userId?: string): Promise<Invoice[]> => {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  if (userId) {
+    return invoices.filter(invoice => invoice.userId === userId);
+  }
+  return invoices;
+};
+
+export const addInvoice = async (invoice: Omit<Invoice, 'id'>, userId?: string): Promise<Invoice> => {
+  await new Promise(resolve => setTimeout(resolve, 600));
+  const newInvoice: Invoice = {
+    ...invoice,
+    id: `inv_${Date.now()}`,
+    userId
+  };
+  
+  invoices.push(newInvoice);
+  return newInvoice;
+};
