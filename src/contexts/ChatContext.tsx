@@ -1,6 +1,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { useNavigation } from "./NavigationContext";
+import { aiPhrases, getInitialGreeting } from "@/data/aiResponses";
 
 type Message = {
   role: "user" | "assistant" | "system";
@@ -20,6 +22,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { currentPage, pageName } = useNavigation();
   
   // Load messages from localStorage on initial render
   useEffect(() => {
@@ -60,26 +63,77 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const contentLower = content.toLowerCase();
       
       // Enhanced response logic with detailed knowledge about the food truck platform
+      // and awareness of the current page
       if (contentLower.includes("hello") || contentLower.includes("hi")) {
-        botResponse = "Hello! I'm Olivia, your Food Truck Community specialist. I can help you book food trucks, explore our vendor options, navigate the dashboard, or answer questions about our services. What can I assist you with today?";
+        botResponse = `Hello! I'm Olivia, your Food Truck Community specialist. I notice you're on our ${pageName} page. How can I assist you today?`;
+      } else if (contentLower.includes("where am i") || contentLower.includes("which page")) {
+        botResponse = `You are currently on our ${pageName} page. Is there anything specific about ${pageName} that you'd like to know?`;
       } else if (contentLower.includes("book") || contentLower.includes("reservation")) {
-        botResponse = "To book a food truck, you can use the 'Book a Truck' button on our homepage, or browse our vendors and select the one you'd like to book. Our calendar feature in the dashboard helps you schedule and manage all your bookings in one place. Would you like me to explain the booking process in detail?";
+        if (currentPage === "/book") {
+          botResponse = "You're already on our booking page! You can select a food truck, choose your date and time, and fill out your contact details to make a reservation.";
+        } else {
+          botResponse = "To book a food truck, you can click 'Book a Truck' on our navigation or go directly to the booking page. There you can select vendors, dates, and complete your reservation.";
+        }
+      } else if (contentLower.includes("vendor") || contentLower.includes("trucks available")) {
+        if (currentPage === "/vendors") {
+          botResponse = "You're currently browsing our vendors page! Here you can see all of our available food trucks, filter by cuisine type, and read reviews from other customers.";
+        } else {
+          botResponse = "We have over 50 food trucks available on our platform across various cuisines. You can view all vendors on our Vendors page, where you can filter by cuisine type and availability.";
+        }
+      } else if (contentLower.includes("order") || contentLower.includes("my booking")) {
+        if (currentPage === "/orders") {
+          botResponse = "You're on the Orders page now where you can see all your past and upcoming food truck bookings. You can manage, modify or cancel your reservations from here.";
+        } else {
+          botResponse = "You can view all your orders and bookings on the Orders page. There you'll find your booking history, upcoming reservations, and options to modify your bookings.";
+        }
+      } else if (contentLower.includes("payment") || contentLower.includes("bill") || contentLower.includes("invoice")) {
+        if (currentPage === "/payments") {
+          botResponse = "You're currently on our Payments & Billing page where you can manage payment methods, view past invoices, and handle any billing-related tasks.";
+        } else {
+          botResponse = "Our Payments & Billing page allows you to manage your payment methods, view your transaction history, and download invoices for your food truck bookings.";
+        }
       } else if (contentLower.includes("dashboard")) {
-        botResponse = "Your dashboard is your command center for all food truck activities! It shows your summary metrics at the top, popular tags for quick filtering, a daily sales chart to track your bookings over time, package sales data, and a detailed sales report. You can access additional features like the calendar view, brand management, and settings through the sidebar.";
-      } else if (contentLower.includes("calendar")) {
-        botResponse = "The calendar view provides a visual timeline of all your food truck bookings. You can add new events by clicking on a date, drag-and-drop to reschedule, and color-code by cuisine type or event type. It's great for planning multiple events and ensuring you don't have scheduling conflicts.";
-      } else if (contentLower.includes("price") || contentLower.includes("cost") || contentLower.includes("payment")) {
-        botResponse = "Our pricing varies by vendor, event size, duration, and selected package. Basic packages start at $500 for a 2-hour event, while premium packages with additional services start at $1,200. You can see detailed pricing on each vendor's page. We accept all major credit cards, digital wallets, and offer installment payment options for larger events.";
-      } else if (contentLower.includes("vendor") || contentLower.includes("become")) {
-        botResponse = "To become a vendor on our platform, click on 'Become a Vendor' in our navigation and complete the application form. You'll need to provide business license information, food safety certifications, insurance details, and menu options. Our team reviews applications within 48 hours, and once approved, you can start receiving bookings immediately.";
-      } else if (contentLower.includes("package") || contentLower.includes("plan")) {
-        botResponse = "We offer three main packages: Basic (food service only), Standard (food service plus basic setup), and Premium (comprehensive service including marketing). Each package can be customized with add-ons like extended hours, additional menu items, or special dietary options. The Package Sales table in your dashboard shows which packages are most popular.";
-      } else if (contentLower.includes("report") || contentLower.includes("analytics")) {
-        botResponse = "Your dashboard provides comprehensive analytics including daily sales charts, package popularity, and detailed sales reports. You can filter data by date range, cuisine type, or event size. These insights help you understand booking patterns and customer preferences. For custom reports, use the export feature in the Sales Report section.";
-      } else if (contentLower.includes("menu") || contentLower.includes("food")) {
-        botResponse = "Our food trucks offer diverse cuisines including Mexican, Italian, Asian fusion, BBQ, desserts, and specialty options like vegan and gluten-free. Each vendor's profile shows their full menu with pricing. Many vendors can customize menus for your specific event needs - just mention your requirements when booking.";
+        if (currentPage.startsWith("/dashboard")) {
+          botResponse = `You're currently on our ${pageName}. Here you can ${
+            currentPage === "/dashboard" ? "view your summary metrics, booking trends, and sales data." : 
+            currentPage.includes("chat") ? "manage customer support conversations and use AI assistance." :
+            currentPage.includes("calendar") ? "view your bookings in calendar format and schedule new events." :
+            currentPage.includes("brands") ? "manage your brand profiles and customization options." :
+            currentPage.includes("settings") ? "configure your account and platform preferences." :
+            currentPage.includes("logs") ? "review system events and activity logs." :
+            currentPage.includes("profile") ? "update your personal information and preferences." :
+            currentPage.includes("accounts") ? "manage user accounts and permissions." :
+            "access specialized dashboard features."
+          }`;
+        } else {
+          botResponse = "Our dashboard gives you a complete overview of your food truck business. You can access it by logging in and clicking on 'View Admin Console' in the navigation.";
+        }
       } else {
-        botResponse = "Thank you for your message! As your Food Truck Community specialist, I can help with bookings, vendor information, dashboard features, event planning, and any other food truck related questions. Our platform connects you with over 50 unique food trucks and offers tools to manage your events efficiently. How else can I assist you today?";
+        // Generate a page-specific response based on current location
+        if (currentPage === "/") {
+          botResponse = "Welcome to the Food Truck Community homepage! Here you can explore our services, featured vendors, and easily book a food truck for your next event.";
+        } else if (currentPage === "/vendors") {
+          botResponse = "Our vendors page showcases all the amazing food trucks available on our platform. You can filter by cuisine, check availability, and read customer reviews.";
+        } else if (currentPage === "/book") {
+          botResponse = "You're on our booking page where you can reserve a food truck for your event. Just select your preferred vendor, date, time, and complete your information to finish the booking.";
+        } else if (currentPage === "/orders") {
+          botResponse = "The orders page displays all your bookings, both past and upcoming. You can track order status, make modifications, or contact vendors directly from here.";
+        } else if (currentPage === "/payments") {
+          botResponse = "On the payments page, you can manage your payment methods, view transaction history, and access invoices for all your food truck bookings.";
+        } else if (currentPage.startsWith("/dashboard")) {
+          botResponse = `The dashboard helps you manage your food truck business efficiently. The ${pageName} section provides specialized tools for ${
+            currentPage.includes("chat") ? "customer support" :
+            currentPage.includes("calendar") ? "scheduling" :
+            currentPage.includes("brands") ? "brand management" :
+            currentPage.includes("settings") ? "platform configuration" :
+            currentPage.includes("logs") ? "activity tracking" :
+            currentPage.includes("profile") ? "personal settings" :
+            currentPage.includes("accounts") ? "user management" :
+            "business analytics"
+          }.`;
+        } else {
+          botResponse = "Thank you for your message! As your Food Truck Community specialist, I can help with bookings, vendor information, dashboard features, and any other food truck related questions. How else can I assist you today?";
+        }
       }
       
       const assistantMessage: Message = {

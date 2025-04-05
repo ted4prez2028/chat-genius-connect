@@ -1,474 +1,351 @@
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Calendar,
-  Clock,
-  Check,
-  X,
-  ExternalLink,
-  Search,
-  Filter,
-  MoreHorizontal,
-  Truck
-} from "lucide-react";
-import { format } from "date-fns";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
+import { Search, CalendarIcon, Clock, FileText } from "lucide-react";
+import { format } from "date-fns";
+import { vendors, getVendorById } from "@/data/vendors";
 
-// Example order data
 interface Order {
   id: string;
-  date: Date;
-  vendor: string;
-  vendorImage: string;
-  location: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  total: number;
-  guests: number;
-  details: string;
-  paymentStatus: 'paid' | 'partial' | 'unpaid';
+  vendorId: string;
+  vendorName: string;
+  date: string;
+  time: string;
+  duration: string;
+  guests: string;
+  status: string;
+  totalAmount: number;
+  specialRequests: string;
+  createdAt: Date;
 }
 
-const initialOrders: Order[] = [
-  {
-    id: "ORD-2023-0001",
-    date: new Date(2023, 6, 15, 12, 0),
-    vendor: "Smash Jibarito",
-    vendorImage: "/public/lovable-uploads/139603f5-0a62-4b62-8395-35b3581c64df.png",
-    location: "Lincoln Park, Chicago, IL",
-    status: "confirmed",
-    total: 750,
-    guests: 50,
-    details: "Corporate lunch event with Puerto Rican cuisine",
-    paymentStatus: "paid"
-  },
-  {
-    id: "ORD-2023-0002",
-    date: new Date(2023, 7, 22, 18, 30),
-    vendor: "Barstool BBQ",
-    vendorImage: "/public/lovable-uploads/11f9528a-dda2-46b9-b183-933ed8329d8f.png",
-    location: "Millennium Park, Chicago, IL",
-    status: "pending",
-    total: 1200,
-    guests: 80,
-    details: "Family reunion with Southern BBQ offerings",
-    paymentStatus: "partial"
-  },
-  {
-    id: "ORD-2023-0003",
-    date: new Date(2023, 5, 10, 11, 0),
-    vendor: "Flash Taco",
-    vendorImage: "/public/lovable-uploads/c0bc3b3b-a4cc-4801-8764-92e0d2e58413.png",
-    location: "Grant Park, Chicago, IL",
-    status: "completed",
-    total: 500,
-    guests: 35,
-    details: "Birthday party with authentic Mexican tacos",
-    paymentStatus: "paid"
-  },
-  {
-    id: "ORD-2023-0004",
-    date: new Date(2023, 8, 5, 17, 0),
-    vendor: "Barstool BBQ",
-    vendorImage: "/public/lovable-uploads/11f9528a-dda2-46b9-b183-933ed8329d8f.png",
-    location: "Wrigley Field, Chicago, IL",
-    status: "cancelled",
-    total: 900,
-    guests: 60,
-    details: "Game day event - cancelled due to weather",
-    paymentStatus: "unpaid"
-  }
-];
-
-const OrdersPage = () => {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+const Orders = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch = 
-      order.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.location.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+  useEffect(() => {
+    // Load orders from localStorage
+    const savedOrders = localStorage.getItem("foodtruck_orders");
+    if (savedOrders) {
+      try {
+        const parsedOrders = JSON.parse(savedOrders);
+        setOrders(parsedOrders);
+        setFilteredOrders(parsedOrders);
+      } catch (e) {
+        console.error("Failed to parse saved orders:", e);
+      }
+    } else {
+      // If there are no orders yet, create sample data
+      if (!isAuthenticated) {
+        const sampleOrders = [
+          {
+            id: "FT123456",
+            vendorId: "v1",
+            vendorName: "Urban Taco",
+            date: "June 15, 2025",
+            time: "6:00 PM",
+            duration: "3 hours",
+            guests: "50",
+            status: "Confirmed",
+            totalAmount: 900,
+            specialRequests: "Vegetarian options required",
+            createdAt: new Date(2025, 5, 1)
+          },
+          {
+            id: "FT789012",
+            vendorId: "v4",
+            vendorName: "Sushi Roll",
+            date: "July 3, 2025",
+            time: "12:00 PM",
+            duration: "2 hours",
+            guests: "30",
+            status: "Pending",
+            totalAmount: 750,
+            specialRequests: "None",
+            createdAt: new Date(2025, 6, 1)
+          },
+          {
+            id: "FT345678",
+            vendorId: "v2",
+            vendorName: "Smokin' BBQ",
+            date: "May 20, 2025",
+            time: "4:00 PM",
+            duration: "4 hours",
+            guests: "100",
+            status: "Completed",
+            totalAmount: 1500,
+            specialRequests: "Need extra tables and serving staff",
+            createdAt: new Date(2025, 4, 1)
+          }
+        ];
+        
+        setOrders(sampleOrders);
+        setFilteredOrders(sampleOrders);
+        localStorage.setItem("foodtruck_orders", JSON.stringify(sampleOrders));
+      }
+    }
+  }, [isAuthenticated]);
+
+  // Apply filters
+  useEffect(() => {
+    let results = orders;
     
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleCancelOrder = () => {
-    if (selectedOrder) {
-      setOrders(orders.map(order => 
-        order.id === selectedOrder.id 
-          ? { ...order, status: 'cancelled' as const }
-          : order
-      ));
-      toast({
-        title: "Order Cancelled",
-        description: `Order ${selectedOrder.id} has been cancelled.`,
-        variant: "destructive",
-      });
-      setShowCancelDialog(false);
+    // Filter by tab
+    if (activeTab === "upcoming") {
+      results = results.filter(order => order.status === "Confirmed" || order.status === "Pending");
+    } else if (activeTab === "completed") {
+      results = results.filter(order => order.status === "Completed");
+    } else if (activeTab === "cancelled") {
+      results = results.filter(order => order.status === "Cancelled");
     }
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(
+        order =>
+          order.id.toLowerCase().includes(query) ||
+          order.vendorName.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter) {
+      results = results.filter(order => order.status === statusFilter);
+    }
+    
+    setFilteredOrders(results);
+  }, [orders, searchQuery, statusFilter, activeTab]);
+
+  const handleCancelOrder = (orderId: string) => {
+    // Find the order and update its status
+    const updatedOrders = orders.map(order => 
+      order.id === orderId ? { ...order, status: "Cancelled" } : order
+    );
+    
+    // Update state and save to localStorage
+    setOrders(updatedOrders);
+    localStorage.setItem("foodtruck_orders", JSON.stringify(updatedOrders));
   };
 
-  const getStatusBadge = (status: Order['status']) => {
-    switch(status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>;
-      case 'confirmed':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Confirmed</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Cancelled</Badge>;
-      case 'completed':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Completed</Badge>;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Confirmed":
+        return "bg-green-100 text-green-800";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Completed":
+        return "bg-blue-100 text-blue-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
-  const getPaymentBadge = (status: Order['paymentStatus']) => {
-    switch(status) {
-      case 'paid':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Paid</Badge>;
-      case 'partial':
-        return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">Partial</Badge>;
-      case 'unpaid':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Unpaid</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Orders</h1>
-        <Button className="bg-brand-pink hover:bg-pink-700">
-          Book a New Truck
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            className="pl-10"
-            placeholder="Search orders by ID, vendor, or location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <div className="container mx-auto py-12 px-4">
+      <h1 className="text-4xl font-bold mb-2 text-center">Your Orders</h1>
+      <p className="text-gray-500 text-center mb-12">
+        {isAuthenticated 
+          ? "Manage and track your food truck bookings"
+          : "Sign in to manage your orders or browse our sample orders below"}
+      </p>
+      
+      {!isAuthenticated && (
+        <div className="max-w-lg mx-auto mb-12 bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">
+          <h2 className="text-xl font-semibold mb-2">Sign In to View Your Orders</h2>
+          <p className="text-gray-600 mb-4">Create an account or sign in to access your personal order history and bookings.</p>
+          <div className="flex justify-center gap-4">
+            <Button variant="outline" onClick={() => navigate("/login")}>Sign In</Button>
+            <Button className="bg-brand-pink hover:bg-pink-700" onClick={() => navigate("/register")}>
+              Create Account
+            </Button>
+          </div>
         </div>
-        <div className="w-full md:w-64">
-          <Select
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-          >
-            <SelectTrigger className="w-full">
+      )}
+      
+      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by order ID or vendor..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="Confirmed">Confirmed</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+              <SelectItem value="Cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      {filteredOrders.length === 0 ? (
-        <div className="text-center py-12">
-          <Truck className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900">No orders found</h3>
-          <p className="mt-1 text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
-          {(searchQuery || statusFilter !== "all") && (
+          
+          <div className="flex justify-end">
             <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("all");
-              }}
+              className="bg-brand-pink hover:bg-pink-700"
+              onClick={() => navigate("/book")}
             >
-              Clear filters
+              Book a Truck
             </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredOrders.map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-xl">Order {order.id}</CardTitle>
-                    <CardDescription className="flex items-center mt-1">
-                      <Calendar className="h-4 w-4 mr-1" /> 
-                      {format(order.date, "MMM d, yyyy")}
-                      <Clock className="h-4 w-4 ml-3 mr-1" /> 
-                      {format(order.date, "h:mm a")}
-                    </CardDescription>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setShowDetailsDialog(true);
-                        }}
-                      >
-                        View Details
-                      </DropdownMenuItem>
-                      {order.status === 'pending' || order.status === 'confirmed' ? (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowCancelDialog(true);
-                          }}
-                          className="text-red-600"
-                        >
-                          Cancel Order
-                        </DropdownMenuItem>
-                      ) : null}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="pb-3">
-                <div className="flex items-center mb-4">
-                  <div className="h-12 w-12 rounded-full overflow-hidden mr-3">
-                    <img 
-                      src={order.vendorImage} 
-                      alt={order.vendor} 
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{order.vendor}</h3>
-                    <p className="text-gray-500 text-sm">{order.location}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-500">Status:</span>
-                  {getStatusBadge(order.status)}
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-500">Payment:</span>
-                  {getPaymentBadge(order.paymentStatus)}
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Total:</span>
-                  <span className="font-medium">${order.total.toFixed(2)}</span>
-                </div>
-              </CardContent>
-              <CardFooter className="bg-gray-50 py-3">
-                <Button
-                  variant="link"
-                  className="text-brand-pink w-full"
-                  onClick={() => {
-                    setSelectedOrder(order);
-                    setShowDetailsDialog(true);
-                  }}
-                >
-                  View Order Details
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Order Details Dialog */}
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-2xl">
-          {selectedOrder && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Order Details: {selectedOrder.id}</DialogTitle>
-                <DialogDescription>
-                  Placed on {format(selectedOrder.date, "MMMM d, yyyy 'at' h:mm a")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="flex items-center">
-                  <div className="h-16 w-16 rounded-lg overflow-hidden mr-4">
-                    <img 
-                      src={selectedOrder.vendorImage} 
-                      alt={selectedOrder.vendor} 
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-lg">{selectedOrder.vendor}</h3>
-                    <div className="flex items-center text-gray-500">
-                      <Calendar className="h-4 w-4 mr-1" /> 
-                      {format(selectedOrder.date, "EEEE, MMMM d, yyyy")}
-                    </div>
-                    <div className="flex items-center text-gray-500">
-                      <Clock className="h-4 w-4 mr-1" /> 
-                      {format(selectedOrder.date, "h:mm a")}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mt-2">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Location</h4>
-                    <p>{selectedOrder.location}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Number of Guests</h4>
-                    <p>{selectedOrder.guests} people</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Order Status</h4>
-                    <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Payment Status</h4>
-                    <div className="mt-1">{getPaymentBadge(selectedOrder.paymentStatus)}</div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Event Details</h4>
-                  <p className="mt-1">{selectedOrder.details}</p>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between font-medium text-lg mb-2">
-                    <span>Total Amount:</span>
-                    <span>${selectedOrder.total.toFixed(2)}</span>
-                  </div>
-                  {selectedOrder.paymentStatus === 'partial' && (
-                    <div className="flex justify-between text-gray-500">
-                      <span>Paid:</span>
-                      <span>${(selectedOrder.total * 0.5).toFixed(2)}</span>
-                    </div>
-                  )}
-                  {selectedOrder.paymentStatus === 'partial' && (
-                    <div className="flex justify-between text-gray-500">
-                      <span>Due:</span>
-                      <span>${(selectedOrder.total * 0.5).toFixed(2)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                {(selectedOrder.status === 'pending' || selectedOrder.status === 'confirmed') && 
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => {
-                      setShowDetailsDialog(false);
-                      setShowCancelDialog(true);
-                    }}
-                  >
-                    Cancel Order
-                  </Button>
-                }
-                {selectedOrder.paymentStatus === 'partial' && 
-                  <Button 
-                    className="bg-brand-pink hover:bg-pink-700"
-                    onClick={() => {
-                      toast({
-                        title: "Redirecting to payment",
-                        description: "You'll be redirected to complete your payment.",
-                      });
-                    }}
-                  >
-                    Complete Payment
-                  </Button>
-                }
-                <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Cancel Order Confirmation Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel Order</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this order? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedOrder && (
-              <div className="bg-red-50 p-4 rounded-lg">
-                <p className="font-medium">Order: {selectedOrder.id}</p>
-                <p>Vendor: {selectedOrder.vendor}</p>
-                <p>Date: {format(selectedOrder.date, "MMMM d, yyyy")}</p>
-                <p>Time: {format(selectedOrder.date, "h:mm a")}</p>
-              </div>
-            )}
-            <p className="mt-4 text-gray-500">
-              Cancellation policy: Full refund if cancelled 48 hours before the event. 50% refund if cancelled between 24-48 hours. No refund for cancellations less than 24 hours before the event.
-            </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
-              Keep Order
-            </Button>
-            <Button variant="destructive" onClick={handleCancelOrder}>
-              Yes, Cancel Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+        
+        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-4 mb-8">
+            <TabsTrigger value="all">All Orders</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="all" className="mt-0">
+            {renderOrders()}
+          </TabsContent>
+          
+          <TabsContent value="upcoming" className="mt-0">
+            {renderOrders()}
+          </TabsContent>
+          
+          <TabsContent value="completed" className="mt-0">
+            {renderOrders()}
+          </TabsContent>
+          
+          <TabsContent value="cancelled" className="mt-0">
+            {renderOrders()}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
+  
+  function renderOrders() {
+    if (filteredOrders.length === 0) {
+      return (
+        <div className="text-center py-16">
+          <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-xl font-medium mb-2">No orders found</h3>
+          <p className="text-gray-500 mb-6">
+            {activeTab !== "all"
+              ? `You don't have any ${activeTab} orders.`
+              : "No orders match your search criteria."}
+          </p>
+          <Button 
+            className="bg-brand-pink hover:bg-pink-700"
+            onClick={() => navigate("/book")}
+          >
+            Book a Food Truck
+          </Button>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-6">
+        {filteredOrders.map((order) => (
+          <Card key={order.id} className="overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+              <div className="md:w-1/4 p-6 bg-gray-50 flex flex-col">
+                <div className="flex items-center gap-2 mb-4">
+                  <span 
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(order.status)}`}
+                  >
+                    {order.status}
+                  </span>
+                  <span className="text-sm text-gray-500">Order #{order.id}</span>
+                </div>
+                
+                <h3 className="text-lg font-semibold mb-2">{order.vendorName}</h3>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>{order.date}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="h-4 w-4" />
+                  <span>{order.time} • {order.duration}</span>
+                </div>
+                
+                <div className="mt-4 text-2xl font-bold">
+                  ${order.totalAmount}
+                </div>
+              </div>
+              
+              <CardContent className="p-6 md:w-3/4">
+                <div className="flex flex-wrap gap-4 justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Guest Count</h3>
+                    <p>{order.guests} guests</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Special Requests</h3>
+                    <p>{order.specialRequests}</p>
+                  </div>
+                  
+                  <div className="flex items-end gap-4 mt-auto">
+                    {order.status === "Confirmed" && (
+                      <>
+                        <Button variant="outline" asChild>
+                          <Link to={`/book?vendor=${order.vendorId}&orderId=${order.id}`}>
+                            Modify
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleCancelOrder(order.id)}
+                        >
+                          Cancel Order
+                        </Button>
+                      </>
+                    )}
+                    {order.status === "Completed" && (
+                      <Button variant="outline" asChild>
+                        <Link to={`/book?vendor=${order.vendorId}`}>
+                          Book Again
+                        </Link>
+                      </Button>
+                    )}
+                    {order.status === "Cancelled" && (
+                      <Button
+                        className="bg-brand-pink hover:bg-pink-700"
+                        asChild
+                      >
+                        <Link to={`/book?vendor=${order.vendorId}`}>
+                          Re-book
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 };
 
-export default OrdersPage;
+export default Orders;
