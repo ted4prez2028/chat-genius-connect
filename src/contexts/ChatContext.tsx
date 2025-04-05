@@ -22,7 +22,18 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { currentPage, pageName } = useNavigation();
+  
+  // Get navigation context safely
+  let pageName = "Unknown";
+  let currentPage = "/";
+  
+  try {
+    const navigation = useNavigation();
+    pageName = navigation.pageName;
+    currentPage = navigation.currentPage;
+  } catch (error) {
+    console.warn("NavigationContext not available, using default values");
+  }
   
   // Load messages from localStorage on initial render
   useEffect(() => {

@@ -4,6 +4,7 @@ import { ShoppingCart, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/layout/Logo";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
