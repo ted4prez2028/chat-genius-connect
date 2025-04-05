@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Video, Phone } from "lucide-react";
+import { Video } from "lucide-react";
 import VideoCall from './VideoCall';
 
 const AICallButton = () => {
