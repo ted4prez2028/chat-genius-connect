@@ -31,7 +31,7 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
@@ -121,7 +121,7 @@ const Orders = () => {
     }
     
     // Apply status filter
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== "all") {
       results = results.filter(order => order.status === statusFilter);
     }
     
@@ -193,7 +193,7 @@ const Orders = () => {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Confirmed">Confirmed</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="Completed">Completed</SelectItem>
