@@ -40,6 +40,7 @@ import {
   Edit,
   Upload
 } from "lucide-react";
+import UserProfileBilling from "@/components/UserProfileBilling";
 
 const UserProfile = () => {
   const { user, logout } = useAuth();
@@ -515,102 +516,9 @@ const UserProfile = () => {
               </Card>
             </TabsContent>
             
-            {/* Billing Tab */}
+            {/* Billing Tab - Using our new component */}
             <TabsContent value="billing">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Billing Information</CardTitle>
-                  <CardDescription>
-                    Manage your billing information and subscription
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-lg border p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">Food Truck Admin Pro</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          $49/month • Next billing date: May 1, 2023
-                        </p>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                        Active
-                      </Badge>
-                    </div>
-                    <div className="mt-4 space-x-2">
-                      <Button size="sm" variant="outline">Change Plan</Button>
-                      <Button size="sm" variant="outline" className="text-red-500">Cancel Subscription</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Payment Method</h4>
-                    <div className="flex items-center gap-4">
-                      <div className="rounded-md p-2 border">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-8"
-                        >
-                          <rect width="20" height="14" x="2" y="5" rx="2" />
-                          <line x1="2" x2="22" y1="10" y2="10" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">•••• •••• •••• 4242</p>
-                        <p className="text-xs text-muted-foreground">Expires 04/2025</p>
-                      </div>
-                      <Button size="sm" variant="ghost">Edit</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Billing Address</h4>
-                    <div className="text-sm">
-                      <p>FoodTruck Inc.</p>
-                      <p>123 Food Truck Lane</p>
-                      <p>San Francisco, CA 94107</p>
-                      <p>United States</p>
-                    </div>
-                    <Button size="sm" variant="outline">Update Address</Button>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Billing History</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <p>April 1, 2023</p>
-                        <p>$49.00</p>
-                        <Button size="sm" variant="ghost" className="h-8">Download</Button>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <p>March 1, 2023</p>
-                        <p>$49.00</p>
-                        <Button size="sm" variant="ghost" className="h-8">Download</Button>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <p>February 1, 2023</p>
-                        <p>$49.00</p>
-                        <Button size="sm" variant="ghost" className="h-8">Download</Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline">Download All Invoices</Button>
-                  <Button>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Update Billing Info
-                  </Button>
-                </CardFooter>
-              </Card>
+              <UserProfileBilling />
             </TabsContent>
           </Tabs>
         </div>

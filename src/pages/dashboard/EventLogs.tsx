@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -19,8 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Info, MoreVertical, Filter, Download, Trash2, RefreshCw, Activity, AlertTriangle, CheckCircle, Search } from "lucide-react";
-import { formatDate } from "@/utils/dateUtils";
+import { Info, MoreVertical, Filter, Download, Trash2, RefreshCw, Activity, AlertTriangle, CheckCircle, Search, Clock } from "lucide-react";
+import { formatDate, formatDistanceToNow } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
 type LogLevel = "info" | "warning" | "error" | "success";
@@ -35,54 +35,165 @@ type LogEntry = {
   details?: string;
 };
 
-const EventLogs = () => {
-  // Mock log data
-  const generateMockLogs = (): LogEntry[] => {
-    const sources = ["API", "Authentication", "Payment", "Booking", "User", "System"];
-    const users = ["admin@example.com", "vendor@example.com", "customer@example.com"];
-    const messages = [
-      "User logged in successfully",
-      "Payment processed",
-      "Booking created",
-      "User profile updated",
-      "Password reset requested",
-      "File upload failed",
-      "API rate limit exceeded",
-      "Database connection error",
-      "Email notification sent",
-      "Security alert: multiple failed login attempts",
-    ];
-    
-    const logs: LogEntry[] = [];
-    
-    for (let i = 0; i < 50; i++) {
-      const level: LogLevel = ["info", "warning", "error", "success"][Math.floor(Math.random() * 4)] as LogLevel;
-      const date = new Date();
-      date.setMinutes(date.getMinutes() - Math.floor(Math.random() * 60 * 24 * 7)); // Random time in the last week
-      
-      logs.push({
-        id: `log-${i}`,
-        timestamp: date,
-        level,
-        message: messages[Math.floor(Math.random() * messages.length)],
-        source: sources[Math.floor(Math.random() * sources.length)],
-        user: Math.random() > 0.3 ? users[Math.floor(Math.random() * users.length)] : undefined,
-        details: Math.random() > 0.5 ? `Additional details for log entry ${i}` : undefined,
-      });
-    }
-    
-    // Sort by timestamp, newest first
-    return logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  };
+// Constant real-world event patterns for more realism
+const EVENT_PATTERNS = [
+  { message: "User login successful", level: "success", source: "Authentication" },
+  { message: "User login failed - incorrect password", level: "warning", source: "Authentication" },
+  { message: "Payment processed successfully", level: "success", source: "Payment" },
+  { message: "Payment failed - insufficient funds", level: "error", source: "Payment" },
+  { message: "New booking created", level: "info", source: "Booking" },
+  { message: "Booking updated", level: "info", source: "Booking" },
+  { message: "Booking cancelled", level: "warning", source: "Booking" },
+  { message: "New user registered", level: "success", source: "User" },
+  { message: "Profile updated", level: "info", source: "User" },
+  { message: "Password reset requested", level: "info", source: "Authentication" },
+  { message: "Password reset completed", level: "success", source: "Authentication" },
+  { message: "File upload failed - size limit exceeded", level: "error", source: "System" },
+  { message: "API rate limit warning", level: "warning", source: "API" },
+  { message: "Database connection error", level: "error", source: "System" },
+  { message: "Email notification sent", level: "info", source: "Notification" },
+  { message: "Multiple failed login attempts detected", level: "warning", source: "Security" },
+  { message: "Session expired", level: "info", source: "Authentication" },
+  { message: "User permissions updated", level: "info", source: "User" },
+  { message: "System backup completed", level: "success", source: "System" },
+  { message: "API endpoint deprecated", level: "warning", source: "API" },
+];
 
-  const [logs, setLogs] = useState<LogEntry[]>(generateMockLogs());
+const USER_EMAILS = [
+  "admin@foodtruck.com",
+  "vendor@streetfood.com",
+  "customer@example.com",
+  "support@foodtruck.com",
+  "johndoe@gmail.com",
+  "sarah.vendor@tacoexpress.com",
+  "mike.customer@outlook.com"
+];
+
+const EventLogs = () => {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">("all");
   const [sourceFilter, setSourceFilter] = useState<string | "all">("all");
+  const [loading, setLoading] = useState(true);
+  const [isLiveUpdating, setIsLiveUpdating] = useState(true);
+  
+  // Generate initial logs
+  useEffect(() => {
+    const generateInitialLogs = () => {
+      setLoading(true);
+      
+      const newLogs: LogEntry[] = [];
+      const now = new Date();
+      
+      // Generate logs over the past 7 days
+      for (let i = 0; i < 50; i++) {
+        const hoursAgo = Math.random() * 24 * 7; // Random time in the last week
+        const timestamp = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+        
+        const eventPattern = EVENT_PATTERNS[Math.floor(Math.random() * EVENT_PATTERNS.length)];
+        const userEmail = Math.random() > 0.3 ? USER_EMAILS[Math.floor(Math.random() * USER_EMAILS.length)] : undefined;
+        
+        newLogs.push({
+          id: `log-${i}-${timestamp.getTime()}`,
+          timestamp,
+          level: eventPattern.level as LogLevel,
+          message: eventPattern.message,
+          source: eventPattern.source,
+          user: userEmail,
+          details: Math.random() > 0.5 ? `Additional details for ${eventPattern.message} at ${timestamp.toISOString()}` : undefined,
+        });
+      }
+      
+      // Sort by timestamp, newest first
+      newLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      setLogs(newLogs);
+      setLoading(false);
+    };
+    
+    generateInitialLogs();
+  }, []);
+  
+  // Simulate real-time log updates
+  useEffect(() => {
+    if (!isLiveUpdating) return;
+    
+    const generateRandomLog = () => {
+      const eventPattern = EVENT_PATTERNS[Math.floor(Math.random() * EVENT_PATTERNS.length)];
+      const userEmail = Math.random() > 0.3 ? USER_EMAILS[Math.floor(Math.random() * USER_EMAILS.length)] : undefined;
+      
+      return {
+        id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        timestamp: new Date(),
+        level: eventPattern.level as LogLevel,
+        message: eventPattern.message,
+        source: eventPattern.source,
+        user: userEmail,
+        details: Math.random() > 0.5 ? `Additional details for ${eventPattern.message} at ${new Date().toISOString()}` : undefined,
+      };
+    };
+    
+    const interval = setInterval(() => {
+      // 15% chance of generating a new log entry
+      if (Math.random() < 0.15) {
+        const newLog = generateRandomLog();
+        setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 99)]); // Keep max 100 logs
+        
+        if (
+          (levelFilter === "all" || newLog.level === levelFilter) &&
+          (sourceFilter === "all" || newLog.source === sourceFilter) &&
+          (!searchTerm || 
+            newLog.message.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            (newLog.user && newLog.user.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            newLog.source.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        ) {
+          const levelText = newLog.level.charAt(0).toUpperCase() + newLog.level.slice(1);
+          toast(`New ${levelText} Log: ${newLog.message}`, {
+            description: `Source: ${newLog.source}${newLog.user ? ` • User: ${newLog.user}` : ''}`,
+            icon: getLevelIcon(newLog.level)
+          });
+        }
+      }
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [isLiveUpdating, levelFilter, sourceFilter, searchTerm]);
+  
+  const toggleLiveUpdates = () => {
+    setIsLiveUpdating(!isLiveUpdating);
+    toast.success(isLiveUpdating ? "Live updates paused" : "Live updates enabled");
+  };
   
   const refreshLogs = () => {
-    setLogs(generateMockLogs());
-    toast.success("Logs refreshed");
+    // Clear and regenerate logs
+    setLogs([]);
+    
+    setTimeout(() => {
+      const newLogs: LogEntry[] = [];
+      const now = new Date();
+      
+      for (let i = 0; i < 50; i++) {
+        const hoursAgo = Math.random() * 24 * 7;
+        const timestamp = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+        
+        const eventPattern = EVENT_PATTERNS[Math.floor(Math.random() * EVENT_PATTERNS.length)];
+        const userEmail = Math.random() > 0.3 ? USER_EMAILS[Math.floor(Math.random() * USER_EMAILS.length)] : undefined;
+        
+        newLogs.push({
+          id: `log-${i}-${timestamp.getTime()}`,
+          timestamp,
+          level: eventPattern.level as LogLevel,
+          message: eventPattern.message,
+          source: eventPattern.source,
+          user: userEmail,
+          details: Math.random() > 0.5 ? `Additional context for ${eventPattern.message}` : undefined,
+        });
+      }
+      
+      newLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      setLogs(newLogs);
+      toast.success("Logs refreshed");
+    }, 500);
   };
   
   const clearLogs = () => {
@@ -91,7 +202,13 @@ const EventLogs = () => {
   };
   
   const downloadLogs = () => {
-    const jsonStr = JSON.stringify(logs, null, 2);
+    const jsonStr = JSON.stringify(logs, (key, value) => {
+      if (key === 'timestamp') {
+        return new Date(value).toISOString();
+      }
+      return value;
+    }, 2);
+    
     const blob = new Blob([jsonStr], { type: "application/json" });
     const href = URL.createObjectURL(blob);
     
@@ -105,10 +222,12 @@ const EventLogs = () => {
     toast.success("Logs downloaded successfully");
   };
   
+  // Get unique sources from logs
   const sources = [...new Set(logs.map(log => log.source))];
   
   const filteredLogs = logs.filter(log => {
-    const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = searchTerm === "" || 
+                         log.message.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          (log.user && log.user.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          log.source.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -144,15 +263,23 @@ const EventLogs = () => {
           <p className="text-muted-foreground mt-2">View and manage system event logs</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant={isLiveUpdating ? "default" : "outline"} 
+            onClick={toggleLiveUpdates}
+            className={isLiveUpdating ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            <Clock className={`h-4 w-4 mr-2 ${isLiveUpdating ? "animate-pulse" : ""}`} />
+            {isLiveUpdating ? "Live" : "Enable Live Updates"}
+          </Button>
           <Button variant="outline" onClick={refreshLogs}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={downloadLogs}>
+          <Button variant="outline" onClick={downloadLogs} disabled={logs.length === 0}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" className="text-red-600" onClick={clearLogs}>
+          <Button variant="outline" className="text-red-600" onClick={clearLogs} disabled={logs.length === 0}>
             <Trash2 className="h-4 w-4 mr-2" />
             Clear
           </Button>
@@ -237,18 +364,56 @@ const EventLogs = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLogs.length > 0 ? (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={`loading-${index}`}>
+                    <TableCell>
+                      <div className="w-16 h-6 bg-gray-200 animate-pulse rounded"></div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-32 h-5 bg-gray-200 animate-pulse rounded"></div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-full h-5 bg-gray-200 animate-pulse rounded"></div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-20 h-5 bg-gray-200 animate-pulse rounded"></div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-32 h-5 bg-gray-200 animate-pulse rounded"></div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-full ml-auto"></div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filteredLogs.length > 0 ? (
                 filteredLogs.map(log => (
-                  <TableRow key={log.id}>
+                  <TableRow key={log.id} className="group">
                     <TableCell>{getLevelBadge(log.level)}</TableCell>
-                    <TableCell>{formatDate(log.timestamp)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-xs">{formatDate(log.timestamp)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(log.timestamp)}
+                        </span>
+                      </div>
+                    </TableCell>
                     <TableCell>{log.message}</TableCell>
-                    <TableCell>{log.source}</TableCell>
-                    <TableCell>{log.user || "-"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-normal">
+                        {log.source}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {log.user || (
+                        <span className="text-muted-foreground text-sm">System</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

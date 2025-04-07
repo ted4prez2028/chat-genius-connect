@@ -54,7 +54,7 @@ const ChatWidget = () => {
               <div className="text-center text-gray-500 py-8">
                 <MessageSquare className="mx-auto h-12 w-12 mb-4 text-gray-400" />
                 <p>Welcome to Food Truck Community support!</p>
-                <p className="text-sm mt-2">I'm Olivia, your personal assistant. Send me a message to get started!</p>
+                <p className="text-sm mt-2">I'm Olivia. Send me a message to get started!</p>
               </div>
             ) : (
               messages.map((msg, index) => (
