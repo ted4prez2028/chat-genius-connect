@@ -1,9 +1,24 @@
+
 /**
  * Format date for display (simple format for demo)
  */
 export const formatDate = (date: Date | undefined) => {
   if (!date) return "";
   return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+};
+
+/**
+ * Format date with time
+ */
+export const formatDateWithTime = (date: Date | undefined) => {
+  if (!date) return "";
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
 };
 
 // Add this new function for relative time display

@@ -26,6 +26,7 @@ import MainLayout from "./components/layout/MainLayout";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Vendors from "./pages/Vendors"; 
 import BookTruck from "./pages/BookTruck";
+import Cart from "./pages/Cart";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,14 @@ const App = () => (
                   element={
                     <MainLayout>
                       <BookTruck />
+                    </MainLayout>
+                  } 
+                />
+                <Route 
+                  path="/cart" 
+                  element={
+                    <MainLayout>
+                      <Cart />
                     </MainLayout>
                   } 
                 />
@@ -169,4 +178,3 @@ const App = () => (
 );
 
 export default App;
-
