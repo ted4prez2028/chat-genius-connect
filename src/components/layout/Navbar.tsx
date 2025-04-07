@@ -10,27 +10,27 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
   return (
-    <nav className="w-full bg-black text-white p-4 shadow-md sticky top-0 z-50">
+    <nav className="w-full bg-[#000000] text-white p-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
         <Logo />
         
         <div className="hidden md:flex space-x-6 items-center">
-          <Link to="/" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+          <Link to="/" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
             HOME
           </Link>
-          <Link to="/vendors" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+          <Link to="/vendors" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
             VENDORS
           </Link>
-          <Link to="/book" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+          <Link to="/book" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
             BOOK A TRUCK
           </Link>
-          <Link to="/orders" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+          <Link to="/orders" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
             ORDERS
           </Link>
-          <Link to="/payments" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+          <Link to="/payments" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
             PAYMENTS
           </Link>
-          <Link to="/faqs" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+          <Link to="/faqs" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
             FAQs
           </Link>
         </div>
@@ -38,7 +38,7 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="hover:text-brand-yellow transition-colors font-medium uppercase">
+              <Link to="/dashboard" className="hover:text-brand-yellow transition-colors font-medium uppercase text-white/80 hover:text-opacity-100">
                 VIEW ADMIN CONSOLE
               </Link>
               <Button 
@@ -47,7 +47,7 @@ const Navbar = () => {
               >
                 <span className="font-bold">{user?.name?.charAt(0) || 'S'}</span>
               </Button>
-              <Link to="/cart" className="relative">
+              <Link to="/cart" className="relative text-white/80 hover:text-white">
                 <ShoppingCart className="h-6 w-6" />
                 <span className="absolute -top-2 -right-2 bg-brand-yellow text-black rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">
                   2
@@ -56,7 +56,7 @@ const Navbar = () => {
             </>
           ) : (
             <Link to="/login">
-              <Button className="btn-secondary">
+              <Button className="btn-secondary text-black">
                 LOGIN
               </Button>
             </Link>
