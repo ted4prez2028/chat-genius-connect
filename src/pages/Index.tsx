@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -35,7 +34,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <img 
-                src="/public/lovable-uploads/139603f5-0a62-4b62-8395-35b3581c64df.png" 
+                src="/lovable-uploads/139603f5-0a62-4b62-8395-35b3581c64df.png" 
                 alt="Smash Jibarito" 
                 className="w-full h-56 object-cover"
               />
@@ -50,7 +49,7 @@ const HomePage = () => {
             
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <img 
-                src="/public/lovable-uploads/11f9528a-dda2-46b9-b183-933ed8329d8f.png" 
+                src="/lovable-uploads/11f9528a-dda2-46b9-b183-933ed8329d8f.png" 
                 alt="Barstool BBQ" 
                 className="w-full h-56 object-cover"
               />
@@ -65,7 +64,7 @@ const HomePage = () => {
             
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <img 
-                src="/public/lovable-uploads/c0bc3b3b-a4cc-4801-8764-92e0d2e58413.png" 
+                src="/lovable-uploads/c0bc3b3b-a4cc-4801-8764-92e0d2e58413.png" 
                 alt="Flash Taco" 
                 className="w-full h-56 object-cover"
               />

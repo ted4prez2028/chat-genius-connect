@@ -84,7 +84,7 @@ const Vendors = () => {
               <SelectValue placeholder="Cuisine Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Cuisines</SelectItem>
+              <SelectItem value="all">All Cuisines</SelectItem>
               {cuisineTypes.map(cuisine => (
                 <SelectItem key={cuisine} value={cuisine}>{cuisine}</SelectItem>
               ))}
@@ -96,7 +96,7 @@ const Vendors = () => {
               <SelectValue placeholder="Price Range" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Prices</SelectItem>
+              <SelectItem value="all">All Prices</SelectItem>
               <SelectItem value="$">$ - Budget</SelectItem>
               <SelectItem value="$$">$$ - Moderate</SelectItem>
               <SelectItem value="$$$">$$$ - Premium</SelectItem>
@@ -108,7 +108,7 @@ const Vendors = () => {
               <SelectValue placeholder="Dietary Options" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Options</SelectItem>
+              <SelectItem value="all">All Options</SelectItem>
               {dietaryOptions.map(option => (
                 <SelectItem key={option} value={option}>{option}</SelectItem>
               ))}
