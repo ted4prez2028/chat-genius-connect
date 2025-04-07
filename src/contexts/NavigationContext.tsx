@@ -33,6 +33,8 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
       setPageName("Book a Truck");
     } else if (path === "/cart") {
       setPageName("Shopping Cart");
+    } else if (path === "/payment-success") {
+      setPageName("Payment Successful");
     } else if (path.startsWith("/dashboard")) {
       const subPath = path.split("/")[2] || "";
       const formattedSubPath = subPath.charAt(0).toUpperCase() + subPath.slice(1);

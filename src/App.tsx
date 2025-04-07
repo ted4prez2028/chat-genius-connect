@@ -27,6 +27,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import Vendors from "./pages/Vendors"; 
 import BookTruck from "./pages/BookTruck";
 import Cart from "./pages/Cart";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,14 @@ const App = () => (
                   element={
                     <MainLayout>
                       <Cart />
+                    </MainLayout>
+                  } 
+                />
+                <Route 
+                  path="/payment-success" 
+                  element={
+                    <MainLayout>
+                      <PaymentSuccess />
                     </MainLayout>
                   } 
                 />

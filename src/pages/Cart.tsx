@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Table, 
   TableBody, 
@@ -20,9 +20,12 @@ import {
   CreditCard,
   X,
   Plus,
-  Minus
+  Minus,
+  Loader2
 } from "lucide-react";
 import { formatDate } from "@/utils/dateUtils";
+import { useAuth } from "@/contexts/AuthContext";
+import { createCheckoutSession } from "@/services/checkoutService";
 
 // Cart item type
 interface CartItem {
@@ -36,29 +39,62 @@ interface CartItem {
 }
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "Custom Burrito Bowl",
-      price: 12.99,
-      quantity: 2,
-      image: "/lovable-uploads/1ca80f99-d4fa-47bf-be5e-0d0fa265612d.png",
-      vendorName: "Taco Fiesta",
-      date: new Date()
-    },
-    {
-      id: "2",
-      name: "Loaded Nachos",
-      price: 8.99,
-      quantity: 1,
-      image: "/lovable-uploads/139603f5-0a62-4b62-8395-35b3581c64df.png",
-      vendorName: "Taco Fiesta",
-      date: new Date()
-    }
-  ]);
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [promoCode, setPromoCode] = useState<string>("");
   const [discountApplied, setDiscountApplied] = useState<boolean>(false);
+  
+  // Load cart items from localStorage
+  useEffect(() => {
+    const savedCart = localStorage.getItem("foodtruck_cart");
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        // Convert date strings back to Date objects
+        const cartWithDates = parsedCart.map((item: any) => ({
+          ...item,
+          date: new Date(item.date)
+        }));
+        setCartItems(cartWithDates);
+      } catch (e) {
+        console.error("Failed to parse cart:", e);
+        setCartItems([]);
+      }
+    } else if (cartItems.length === 0) {
+      // Set demo items only if there are no saved items
+      const demoItems = [
+        {
+          id: "1",
+          name: "Custom Burrito Bowl",
+          price: 12.99,
+          quantity: 2,
+          image: "/lovable-uploads/1ca80f99-d4fa-47bf-be5e-0d0fa265612d.png",
+          vendorName: "Taco Fiesta",
+          date: new Date()
+        },
+        {
+          id: "2",
+          name: "Loaded Nachos",
+          price: 8.99,
+          quantity: 1,
+          image: "/lovable-uploads/139603f5-0a62-4b62-8395-35b3581c64df.png",
+          vendorName: "Taco Fiesta",
+          date: new Date()
+        }
+      ];
+      setCartItems(demoItems);
+      localStorage.setItem("foodtruck_cart", JSON.stringify(demoItems));
+    }
+  }, []);
+  
+  // Save cart items to localStorage whenever they change
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      localStorage.setItem("foodtruck_cart", JSON.stringify(cartItems));
+    }
+  }, [cartItems]);
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const discount = discountApplied ? subtotal * 0.1 : 0;
@@ -88,6 +124,7 @@ const Cart = () => {
     setCartItems([]);
     setDiscountApplied(false);
     setPromoCode("");
+    localStorage.removeItem("foodtruck_cart");
     toast.success("Cart cleared");
   };
   
@@ -101,15 +138,35 @@ const Cart = () => {
     }
   };
   
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to checkout");
+      navigate("/login?redirect=/cart");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const response = await createCheckoutSession(cartItems);
+      
+      if (response && response.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = response.url;
+      } else {
+        throw new Error("Failed to create checkout session");
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to process checkout");
+    } finally {
       setLoading(false);
-      toast.success("Order placed successfully!");
-      setCartItems([]);
-      setDiscountApplied(false);
-      setPromoCode("");
-    }, 1500);
+    }
   };
   
   // Format currency
@@ -277,13 +334,24 @@ const Cart = () => {
                 onClick={handleCheckout}
                 disabled={loading || cartItems.length === 0}
               >
-                {loading ? "Processing..." : (
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
                   <>
                     <CreditCard className="mr-2 h-4 w-4" />
-                    Checkout Now
+                    Checkout with Stripe
                   </>
                 )}
               </Button>
+              
+              {!isAuthenticated && (
+                <p className="text-xs text-center text-red-500 mt-2">
+                  Please <Link to="/login?redirect=/cart" className="underline">login</Link> to checkout
+                </p>
+              )}
               
               <p className="text-xs text-center text-gray-500 mt-4">
                 By checking out, you agree to our Terms of Service and Privacy Policy
