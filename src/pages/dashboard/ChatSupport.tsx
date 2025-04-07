@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,6 @@ interface Message {
   isAI?: boolean;
 }
 
-// Sample data for conversations
 const sampleConversations: Conversation[] = [
   {
     id: "conv-1",
@@ -142,7 +140,6 @@ const ChatSupport = () => {
   };
 
   const selectConversation = (conversation: Conversation) => {
-    // Mark as read when selecting a conversation
     const updatedConversations = conversations.map(conv => 
       conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
     );
@@ -160,14 +157,12 @@ const ChatSupport = () => {
       createdAt: new Date(),
     };
     
-    // Add message to current conversation
     const updatedConversation = {
       ...selectedConversation,
       messages: [...selectedConversation.messages, newMsg],
       lastMessageAt: new Date(),
     };
     
-    // Update conversations list
     setConversations(
       conversations.map(conv => 
         conv.id === selectedConversation.id ? updatedConversation : conv
@@ -176,14 +171,9 @@ const ChatSupport = () => {
     
     setSelectedConversation(updatedConversation);
     setNewMessage("");
-    
-    // Simulate AI response
-    setIsAIResponding(true);
-    await simulateAIResponse(updatedConversation);
   };
 
   const simulateAIResponse = async (conversation: Conversation) => {
-    // Wait 1-2 seconds to simulate processing
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
     
     let aiResponse = "I'll look into this and get back to you soon!";
@@ -236,7 +226,6 @@ const ChatSupport = () => {
       <h1 className="text-4xl font-bold mb-8">CHAT SUPPORT</h1>
       
       <div className="flex h-[calc(100vh-12rem)] border rounded-lg overflow-hidden">
-        {/* Conversations sidebar */}
         <div className="w-1/3 border-r bg-gray-50">
           <div className="p-4 border-b">
             <Input placeholder="Search conversations..." />
@@ -273,7 +262,6 @@ const ChatSupport = () => {
           </div>
         </div>
         
-        {/* Chat area */}
         <div className="flex-1 flex flex-col">
           {selectedConversation ? (
             <>

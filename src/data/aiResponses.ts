@@ -13,7 +13,7 @@ export const aiPhrases = [
 ];
 
 export const getInitialGreeting = () => {
-  return "Hi there! I'm Olivia, your Food Truck Community specialist. I can see you're exploring our brands page! This section helps you manage your food truck branding, logos, and color schemes. How can I assist you today?";
+  return "Hi there! I'm Olivia, your Food Truck Community specialist. How can I assist you today?";
 };
 
 export const getMuteResponse = (isMuted: boolean) => {
@@ -33,5 +33,5 @@ export const getVoiceDetectionResponse = () => {
 };
 
 export const getConnectedResponse = () => {
-  return "Great! I can see and hear you now. Welcome to our virtual assistant service! I'm Olivia, and I'm here to help with anything related to our food truck platform. What can I help you with today?";
+  return "Great! I can see and hear you now. How can I assist you with our food truck platform today?";
 };

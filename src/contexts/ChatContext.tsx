@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
 import { useNavigation } from "./NavigationContext";
-import { aiPhrases, getInitialGreeting } from "@/data/aiResponses";
 
 type Message = {
   role: "user" | "assistant" | "system";

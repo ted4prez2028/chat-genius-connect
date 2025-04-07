@@ -10,7 +10,6 @@ import LocalVideo from "./LocalVideo";
 import AIVideo from "./AIVideo";
 import { 
   aiPhrases, 
-  getInitialGreeting, 
   getMuteResponse, 
   getVideoResponse, 
   getVoiceDetectionResponse, 
@@ -26,6 +25,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const [aiResponses, setAiResponses] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(true);
+  const [userHasSpoken, setUserHasSpoken] = useState(false);
   
   const {
     localStream,
@@ -54,9 +54,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       const timer = setTimeout(() => {
         setIsAiLoading(false);
-        const greeting = getInitialGreeting();
-        setAiResponses([greeting]);
-        speakText(greeting);
       }, 2000);
       
       return () => {
@@ -67,18 +64,11 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
   
   useEffect(() => {
-    if (isConnected && aiResponses.length === 1) {
-      const response = getConnectedResponse();
-      setAiResponses(prev => [...prev, response]);
-      speakText(response);
-    }
-  }, [isConnected]);
-  
-  useEffect(() => {
     if (userSpeaking && !userVoiceDetected && !isMuted) {
       setUserVoiceDetected(true);
+      setUserHasSpoken(true);
       
-      if (aiResponses.length < 3) {
+      if (aiResponses.length === 0) {
         const response = getVoiceDetectionResponse();
         setAiResponses(prev => [...prev, response]);
         speakText(response);
@@ -87,7 +77,15 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
   }, [userSpeaking, userVoiceDetected, isMuted]);
   
   useEffect(() => {
-    if (!isAiSpeaking && Math.random() > 0.6 && aiResponses.length < 3) {
+    if (isConnected && userHasSpoken && aiResponses.length === 0) {
+      const response = getConnectedResponse();
+      setAiResponses(prev => [...prev, response]);
+      speakText(response);
+    }
+  }, [isConnected, userHasSpoken]);
+  
+  useEffect(() => {
+    if (!isAiSpeaking && Math.random() > 0.6 && userHasSpoken && aiResponses.length < 3) {
       const timer = setTimeout(() => {
         const randomIndex = Math.floor(Math.random() * aiPhrases.length);
         const randomPhrase = aiPhrases[randomIndex];
@@ -97,7 +95,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
       
       return () => clearTimeout(timer);
     }
-  }, [isAiSpeaking]);
+  }, [isAiSpeaking, userHasSpoken]);
 
   const handleToggleMute = () => {
     toggleMute();
@@ -154,7 +152,7 @@ const VideoCall: React.FC<VideoCallProps> = ({ isOpen, onClose }) => {
             isAiLoading={isAiLoading}
             isConnected={isConnected}
             isAiSpeaking={isAiSpeaking}
-            currentAiResponse={aiResponses.length > 0 ? aiResponses[aiResponses.length - 1] : ""}
+            currentAiResponse={aiResponses.length > 0 ? aiResponses[aiResponses.length - 1] : userHasSpoken ? "Listening..." : "Say hello to start the conversation..."}
           />
           
           <LocalVideo
