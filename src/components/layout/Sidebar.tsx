@@ -35,7 +35,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-[#000000] text-white h-screen flex flex-col fixed">
+    <div className="w-64 bg-[#1a1a1a] text-white h-screen flex flex-col fixed">
       <div className="p-6 border-b border-gray-800">
         <Logo />
       </div>
@@ -46,7 +46,7 @@ const Sidebar = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center px-6 py-3 text-sm font-medium hover:bg-gray-800 transition-colors text-white/80 hover:text-white",
+                "flex items-center px-6 py-3 text-sm font-medium hover:bg-gray-800 transition-colors text-white hover:text-brand-yellow",
                 isActive(item.path) ? "text-brand-yellow border-l-4 border-brand-yellow pl-5" : ""
               )}
             >
@@ -59,7 +59,7 @@ const Sidebar = () => {
       <div className="p-4 border-t border-gray-800">
         <button
           onClick={logout}
-          className="flex items-center px-6 py-3 text-sm font-medium text-white/80 hover:text-brand-yellow transition-colors w-full"
+          className="flex items-center px-6 py-3 text-sm font-medium text-white hover:text-brand-yellow transition-colors w-full"
         >
           <LogOut className="w-5 h-5 mr-2" />
           LOGOUT
